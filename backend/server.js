@@ -52,41 +52,7 @@ app.post("/shorten", async (req,res) => {
     }
 });
 
-app.get("/:shortId", async (req, res) => {
-  try {
-    const { shortId } = req.params;
-    const theurl = await Url.findOne({ shortId });
-
-    if (theurl) {
-      // Increase click count
-      theurl.clicks += 1;
-
-      // Add to click history (keep multiple entries)
-      theurl.clickHistory.push({
-        timestamp: new Date(),
-        userAgent: req.headers["user-agent"] || "Unknown",
-        ipAddress:
-          req.ip ||
-          req.headers["x-forwarded-for"] ||
-          req.connection.remoteAddress ||
-          "Unknown",
-      });
-
-      // Save updates
-      await theurl.save();
-
-      // Redirect to original URL
-      return res.redirect(theurl.originalUrl);
-    } else {
-      return res.status(404).send("URL not found");
-    }
-  } catch (err) {
-    console.error("Error during redirection:", err);
-    return res.status(500).send("Server error");
-  }
-});
-
-// GET /urls - protected route to get user's shortened URLs with stats
+// GET /urls - protected route to get user's shortened URLs with stats (MUST be before /:shortId)
 app.get("/urls", async (req, res) => {
     try {
         // Verify JWT token
@@ -120,6 +86,40 @@ app.get("/urls", async (req, res) => {
         console.error(err);
         res.status(500).json({ error: "Server error" });
     }
+});
+
+app.get("/:shortId", async (req, res) => {
+  try {
+    const { shortId } = req.params;
+    const theurl = await Url.findOne({ shortId });
+
+    if (theurl) {
+      // Increase click count
+      theurl.clicks += 1;
+
+      // Add to click history (keep multiple entries)
+      theurl.clickHistory.push({
+        timestamp: new Date(),
+        userAgent: req.headers["user-agent"] || "Unknown",
+        ipAddress:
+          req.ip ||
+          req.headers["x-forwarded-for"] ||
+          req.connection.remoteAddress ||
+          "Unknown",
+      });
+
+      // Save updates
+      await theurl.save();
+
+      // Redirect to original URL
+      return res.redirect(theurl.originalUrl);
+    } else {
+      return res.status(404).send("URL not found");
+    }
+  } catch (err) {
+    console.error("Error during redirection:", err);
+    return res.status(500).send("Server error");
+  }
 });
 
 const PORT = process.env.PORT || 3000;
