@@ -1,16 +1,19 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './index.css'
+import React from "react";
+import "./index.css";
+import Navbar from "./components/Navbar";
+import Landing from "./components/Landing";
 
 function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <div className='bg-black-800 color-black-300'>hello</div>
-    </>
-  )
+	return (
+		<div className="min-h-screen w-full bg-gradient-to-r from-stone-900 via-neutral-800 to-gray-900 text-white">
+			<div className="backdrop-blur-sm bg-gradient-to-b from-black/10 via-black/5 to-transparent">
+				<Navbar />
+				<main className="px-6 py-8">
+					<Landing />
+				</main>
+			</div>
+		</div>
+	);
 }
 
-export default App
+export default App;
