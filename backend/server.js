@@ -7,10 +7,13 @@ const { nanoid } = require("nanoid");
 const Url = require("./models/Url")
 const mongodburl = process.env.MONGODB_URL || process.env.MONGO_URL || process.env.MONGO_URI;
 
+const authRoutes = require("./routes/auth");
+
 // create express app and middlewares
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use("/auth", authRoutes);
 
 app.post("/shorten", async (req,res) => {
     const { originalUrl } = req.body; 
