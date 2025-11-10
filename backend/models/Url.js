@@ -11,24 +11,33 @@ const UrlSchema = new mongoose.Schema({
         unique: true,
     },
     userId: {
-        type:String,
+        type: String,
         required: false,
+        default: null,
     },
     email: {
-        type:String,
+        type: String,
         required: false,
     },
-    createdAt: Date,
-    clicks:{
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
+    clicks: {
         type: Number,
-        default:0,
+        default: 0,
     },
-    clickHistory:{
-        timestamp: Date,
-        userAgent: String,
-        ipAddress: String,
-        referer: String,
-    },
+    clickHistory: [
+        {
+            timestamp: {
+                type: Date,
+                default: Date.now,
+            },
+            userAgent: String,
+            ipAddress: String,
+            referer: String,
+        }
+    ],
 });
 
 module.exports = mongoose.model("Url", UrlSchema);
