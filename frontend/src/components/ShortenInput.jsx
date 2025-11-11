@@ -1,17 +1,16 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 
 export default function ShortenInput() {
   const [url, setUrl] = useState("");
   const [shortUrl, setShortUrl] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { token } = useAuth();
 
   const isValidUrl = (value) => {
     try {
-      // Basic check using URL constructor
-      // This will throw for invalid urls
-      // allow http/https only
       const u = new URL(value);
       return u.protocol === "http:" || u.protocol === "https:";
     } catch (e) {
@@ -33,10 +32,16 @@ export default function ShortenInput() {
 
     setLoading(true);
     try {
+      const headers = {};
+      
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const res = await axios.post("http://localhost:3000/shorten", {
         originalUrl: url,
-      });
-      // expect backend to return { shortUrl: 'http://...' } or { shortUrl: '/abc' }
+      }, { headers });
+      
       setShortUrl(res.data.shortUrl || "");
       setError("");
     } catch (err) {
@@ -51,7 +56,6 @@ export default function ShortenInput() {
     if (!shortUrl) return;
     try {
       await navigator.clipboard.writeText(shortUrl);
-      // Small visual feedback
       setError("Copied to clipboard");
       setTimeout(() => setError(""), 1600);
     } catch (e) {

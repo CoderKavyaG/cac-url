@@ -3,14 +3,22 @@ import { FaGithub } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import SignUpModal from "./SignUpModal";
 
-export default function Navbar() {
+export default function Navbar({ setCurrentPage }) {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    setCurrentPage("home");
+  };
 
   return (
     <>
       <nav className="w-full flex items-center justify-between py-6 px-10">
-        <div className="text-white text-4xl font-bold tracking-tight font-mono">
+        <div 
+          onClick={() => setCurrentPage("home")}
+          className="text-white text-4xl font-bold tracking-tight font-mono cursor-pointer hover:text-gray-300 transition"
+        >
           cac-url
         </div>
 
@@ -23,7 +31,13 @@ export default function Navbar() {
             <div className="flex items-center gap-4">
               <span className="text-white text-sm">{user.email}</span>
               <button
-                onClick={logout}
+                onClick={() => setCurrentPage("dashboard")}
+                className="bg-blue-600 hover:bg-blue-700 font-semibold text-white text-lg font-mono px-6 py-2 rounded-full transition"
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={handleLogout}
                 className="bg-red-600 hover:bg-red-700 font-semibold text-white text-lg font-mono px-6 py-2 rounded-full transition"
               >
                 Logout
