@@ -1,15 +1,19 @@
-import {BrowserRouter as Router, Routes,Route , Links } from "react-router-dom";
-import LandingPage from "./pages/LandingPage";
+import React from "react";
+import "./index.css";
+import Navbar from "./components/Navbar";
+import Landing from "./components/Landing";
 
 function App() {
-	return (
-		<Router>
-    <Routes>=
-      <Route path="/" element={<LandingPage />} />
-    </Routes>
-    </Router>
-    
-	);
+  return (
+    <div className="min-h-screen w-full bg-gradient-to-r from-stone-900 via-neutral-800 to-gray-900 text-white">
+      <div className="backdrop-blur-sm bg-gradient-to-b from-black/10 via-black/5 to-transparent">
+        <Navbar />
+        <main className="px-6 py-8">
+          <Landing />
+        </main>
+      </div>
+    </div>
+  );
 }
 
 export default App;

@@ -28,9 +28,17 @@ export default function SignInModal({ onClose, onSwitchToSignUp }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-gradient-to-br from-stone-900 to-gray-900 rounded-lg shadow-lg p-8 w-96">
-        <h2 className="text-white text-2xl font-bold mb-6">Sign In</h2>
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl shadow-2xl p-8 w-96 border border-blue-500/30 relative">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl"
+        >
+          ✕
+        </button>
+
+        <h2 className="text-white text-2xl font-bold mb-2">Welcome Back</h2>
+        <p className="text-gray-400 text-sm mb-6">Sign in to view your analytics</p>
 
         {error && (
           <div className="bg-red-500/20 text-red-300 px-4 py-2 rounded mb-4 text-sm">
@@ -44,7 +52,7 @@ export default function SignInModal({ onClose, onSwitchToSignUp }) {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-black/30 text-white placeholder-gray-400 px-4 py-2 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-slate-700/40 text-white placeholder-gray-500 px-4 py-2 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
           <input
@@ -52,7 +60,7 @@ export default function SignInModal({ onClose, onSwitchToSignUp }) {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-black/30 text-white placeholder-gray-400 px-4 py-2 rounded mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-slate-700/40 text-white placeholder-gray-500 px-4 py-2 rounded mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
           <button
@@ -64,27 +72,20 @@ export default function SignInModal({ onClose, onSwitchToSignUp }) {
           </button>
         </form>
 
-        <p className="text-gray-300 text-center mt-4 text-sm">
-          Don't have an account?{" "}
-          <button
-            onClick={() => {
-              setEmail("");
-              setPassword("");
-              setError("");
-              onSwitchToSignUp();
-            }}
-            className="text-blue-400 hover:underline"
-          >
-            Sign Up
-          </button>
-        </p>
-
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white"
-        >
-          ✕
-        </button>
+        <div className="mt-6 pt-6 border-t border-slate-700">
+          <p className="text-gray-400 text-center text-sm">
+            Don't have an account?{" "}
+            <button
+              onClick={() => {
+                onClose();
+                onSwitchToSignUp();
+              }}
+              className="text-blue-400 hover:text-blue-300 font-semibold"
+            >
+              Sign Up
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );
