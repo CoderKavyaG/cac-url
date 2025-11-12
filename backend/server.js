@@ -69,16 +69,20 @@ app.get("/urls", async (req, res) => {
             return res.status(401).json({ error: "Invalid token" });
         }
 
-        // Get all URLs created by this user
+        // Get all URLs created by this user (including deleted ones for recovery)
         const urls = await Url.find({ userId }).sort({ createdAt: -1 });
 
         res.json({
             urls: urls.map(url => ({
                 shortId: url.shortId,
+                customAlias: url.customAlias || null,
                 originalUrl: url.originalUrl,
                 shortUrl: `${process.env.API_URL || 'http://localhost:3000'}/${url.shortId}`,
                 clicks: url.clicks,
                 createdAt: url.createdAt,
+                isDeleted: url.isDeleted,
+                deletedAt: url.deletedAt,
+                expiresAt: url.expiresAt,
                 clickHistory: url.clickHistory
             }))
         });
@@ -88,10 +92,150 @@ app.get("/urls", async (req, res) => {
     }
 });
 
+// DELETE /urls/:shortId - protected route to delete a user's URL (soft delete for 30 days recovery)
+app.delete("/urls/:shortId", async (req, res) => {
+    try {
+        const { shortId } = req.params;
+        
+        // Verify JWT token
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) {
+            return res.status(401).json({ error: "No token provided" });
+        }
+
+        let userId;
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || "Kavyasecretkey12323");
+            userId = decoded.userId;
+        } catch (err) {
+            return res.status(401).json({ error: "Invalid token" });
+        }
+
+        // Find and verify ownership
+        const url = await Url.findOne({ shortId, userId });
+        if (!url) {
+            return res.status(404).json({ error: "URL not found or unauthorized" });
+        }
+
+        // Soft delete - mark as deleted for 30 days recovery
+        url.isDeleted = true;
+        url.deletedAt = new Date();
+        url.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+        await url.save();
+
+        res.json({ success: true, message: "URL deleted successfully. It can be recovered within 30 days." });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+// POST /urls/:shortId/recover - protected route to recover a deleted URL
+app.post("/urls/:shortId/recover", async (req, res) => {
+    try {
+        const { shortId } = req.params;
+        
+        // Verify JWT token
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) {
+            return res.status(401).json({ error: "No token provided" });
+        }
+
+        let userId;
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || "Kavyasecretkey12323");
+            userId = decoded.userId;
+        } catch (err) {
+            return res.status(401).json({ error: "Invalid token" });
+        }
+
+        // Find the deleted URL
+        const url = await Url.findOne({ shortId, userId, isDeleted: true });
+        if (!url) {
+            return res.status(404).json({ error: "Deleted URL not found or already recovered" });
+        }
+
+        // Check if recovery window is still open (30 days)
+        const now = new Date();
+        if (url.expiresAt && now > url.expiresAt) {
+            // Permanently delete after 30 days
+            await Url.deleteOne({ shortId, userId });
+            return res.status(400).json({ error: "Recovery period has expired (30 days)" });
+        }
+
+        // Recover the URL
+        url.isDeleted = false;
+        url.deletedAt = null;
+        url.expiresAt = null;
+        await url.save();
+
+        res.json({ success: true, message: "URL recovered successfully" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+// PUT /urls/:shortId/alias - protected route to update custom alias
+app.put("/urls/:shortId/alias", async (req, res) => {
+    try {
+        const { shortId } = req.params;
+        const { customAlias } = req.body;
+
+        if (!customAlias || typeof customAlias !== "string") {
+            return res.status(400).json({ error: "Invalid alias" });
+        }
+
+        // Validate alias format
+        if (!/^[a-zA-Z0-9_-]+$/.test(customAlias)) {
+            return res.status(400).json({ error: "Alias can only contain letters, numbers, hyphens, and underscores" });
+        }
+
+        // Verify JWT token
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) {
+            return res.status(401).json({ error: "No token provided" });
+        }
+
+        let userId;
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || "Kavyasecretkey12323");
+            userId = decoded.userId;
+        } catch (err) {
+            return res.status(401).json({ error: "Invalid token" });
+        }
+
+        // Find and verify ownership
+        const url = await Url.findOne({ shortId, userId });
+        if (!url) {
+            return res.status(404).json({ error: "URL not found or unauthorized" });
+        }
+
+        // Check if alias already exists (for other users)
+        const existingAlias = await Url.findOne({ customAlias, userId: { $ne: userId } });
+        if (existingAlias) {
+            return res.status(400).json({ error: "Alias already taken" });
+        }
+
+        // Update the alias
+        url.customAlias = customAlias;
+        await url.save();
+
+        res.json({ success: true, customAlias: customAlias });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
 app.get("/:shortId", async (req, res) => {
   try {
     const { shortId } = req.params;
-    const theurl = await Url.findOne({ shortId });
+    // Check both shortId and customAlias
+    const theurl = await Url.findOne({
+      $or: [{ shortId }, { customAlias: shortId }],
+      isDeleted: false  // Only active URLs can be accessed
+    });
 
     if (theurl) {
       // Increase click count
@@ -114,7 +258,7 @@ app.get("/:shortId", async (req, res) => {
       // Redirect to original URL
       return res.redirect(theurl.originalUrl);
     } else {
-      return res.status(404).send("URL not found");
+      return res.status(404).send("URL not found or has been deleted");
     }
   } catch (err) {
     console.error("Error during redirection:", err);

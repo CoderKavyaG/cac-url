@@ -10,6 +10,12 @@ const UrlSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
+    customAlias: {
+        type: String,
+        required: false,
+        unique: true,
+        sparse: true,
+    },
     userId: {
         type: String,
         required: false,
@@ -22,6 +28,20 @@ const UrlSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now,
+    },
+    expiresAt: {
+        type: Date,
+        required: false,
+        default: null,
+    },
+    isDeleted: {
+        type: Boolean,
+        default: false,
+    },
+    deletedAt: {
+        type: Date,
+        required: false,
+        default: null,
     },
     clicks: {
         type: Number,
