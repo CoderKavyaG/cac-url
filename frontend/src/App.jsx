@@ -3,10 +3,16 @@ import "./index.css";
 import { useAuth } from "./context/AuthContext";
 import Navbar from "./components/Navbar";
 import Landing from "./components/Landing";
+import Dashboard from "./pages/Dashboard";
 
 function App() {
   const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState("home");
+
+  // Show Dashboard if user is logged in and on dashboard page
+  if (user && currentPage === "dashboard") {
+    return <Dashboard setCurrentPage={setCurrentPage} />;
+  }
 
   // Show home/landing page
   return (
