@@ -1,6 +1,47 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 const AuthContext = createContext();
 
+// Test user data (mock database - no MongoDB needed)
+const TEST_USERS = {
+  "admin@gmail.com": {
+    id: "user1",
+    email: "admin@gmail.com",
+    password: "1233",
+  },
+};
+
+// Test URLs data (mock database)
+const MOCK_URLS = [
+  {
+    shortId: "abc123",
+    originalUrl: "https://www.google.com/search?q=javascript",
+    customAlias: null,
+    clicks: 42,
+    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    shortId: "def456",
+    originalUrl: "https://github.com/facebook/react",
+    customAlias: "react-repo",
+    clicks: 28,
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    shortId: "ghi789",
+    originalUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    customAlias: null,
+    clicks: 156,
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    shortId: "jkl012",
+    originalUrl: "https://stackoverflow.com/questions/",
+    customAlias: "stack-overflow",
+    clicks: 89,
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
@@ -18,27 +59,37 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Signup function
+  // Signup function (using custom data)
   const signup = async (email, password) => {
     try {
-      const response = await fetch("http://localhost:3000/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      // Simulating API delay
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Signup failed");
+      // Check if user already exists
+      if (TEST_USERS[email]) {
+        throw new Error("User already exists");
       }
 
-      const data = await response.json();
-      setToken(data.token);
-      setUser(data.user);
-      
+      // Create new user
+      const newUser = {
+        id: `user_${Date.now()}`,
+        email,
+        password,
+      };
+
+      // Add to test users (in real app, would save to DB)
+      TEST_USERS[email] = newUser;
+
+      // Create token
+      const token = `token_${Date.now()}`;
+
+      // Set state
+      setToken(token);
+      setUser(newUser);
+
       // Save to localStorage
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("authUser", JSON.stringify(data.user));
+      localStorage.setItem("authToken", token);
+      localStorage.setItem("authUser", JSON.stringify(newUser));
 
       return { success: true };
     } catch (err) {
@@ -46,27 +97,33 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Login function
+  // Login function (using custom data)
   const login = async (email, password) => {
     try {
-      const response = await fetch("http://localhost:3000/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      // Simulating API delay
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Login failed");
+      // Check if user exists
+      const user = TEST_USERS[email];
+      if (!user) {
+        throw new Error("User not found");
       }
 
-      const data = await response.json();
-      setToken(data.token);
-      setUser(data.user);
-      
+      // Check password
+      if (user.password !== password) {
+        throw new Error("Invalid password");
+      }
+
+      // Create token
+      const token = `token_${Date.now()}`;
+
+      // Set state
+      setToken(token);
+      setUser(user);
+
       // Save to localStorage
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("authUser", JSON.stringify(data.user));
+      localStorage.setItem("authToken", token);
+      localStorage.setItem("authUser", JSON.stringify(user));
 
       return { success: true };
     } catch (err) {
@@ -96,3 +153,6 @@ export const useAuth = () => {
   }
   return context;
 };
+
+// Export mock data for use in other components
+export { TEST_USERS, MOCK_URLS };

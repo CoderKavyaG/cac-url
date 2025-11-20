@@ -52,25 +52,11 @@ app.post("/shorten", async (req,res) => {
     }
 });
 
-// GET /urls - protected route to get user's shortened URLs with stats (MUST be before /:shortId)
+// GET /urls - get all URLs (public endpoint)
 app.get("/urls", async (req, res) => {
     try {
-        // Verify JWT token
-        const token = req.headers.authorization?.split(" ")[1];
-        if (!token) {
-            return res.status(401).json({ error: "No token provided" });
-        }
-
-        let userId;
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || "Kavyasecretkey12323");
-            userId = decoded.userId;
-        } catch (err) {
-            return res.status(401).json({ error: "Invalid token" });
-        }
-
-        // Get all URLs created by this user (including deleted ones for recovery)
-        const urls = await Url.find({ userId }).sort({ createdAt: -1 });
+        // Get all URLs (no auth required)
+        const urls = await Url.find({ isDeleted: false }).sort({ createdAt: -1 });
 
         res.json({
             urls: urls.map(url => ({
@@ -92,29 +78,15 @@ app.get("/urls", async (req, res) => {
     }
 });
 
-// DELETE /urls/:shortId - protected route to delete a user's URL (soft delete for 30 days recovery)
+// DELETE /urls/:shortId - delete a URL (public endpoint)
 app.delete("/urls/:shortId", async (req, res) => {
     try {
         const { shortId } = req.params;
         
-        // Verify JWT token
-        const token = req.headers.authorization?.split(" ")[1];
-        if (!token) {
-            return res.status(401).json({ error: "No token provided" });
-        }
-
-        let userId;
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || "Kavyasecretkey12323");
-            userId = decoded.userId;
-        } catch (err) {
-            return res.status(401).json({ error: "Invalid token" });
-        }
-
-        // Find and verify ownership
-        const url = await Url.findOne({ shortId, userId });
+        // Find the URL
+        const url = await Url.findOne({ shortId });
         if (!url) {
-            return res.status(404).json({ error: "URL not found or unauthorized" });
+            return res.status(404).json({ error: "URL not found" });
         }
 
         // Soft delete - mark as deleted for 30 days recovery

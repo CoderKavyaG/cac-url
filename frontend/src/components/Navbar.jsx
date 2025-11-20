@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { FaGithub } from "react-icons/fa";
+import { FiUser } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import SignUpModal from "./SignUpModal";
 
-export default function Navbar({ setCurrentPage }) {
+export default function Navbar({ setCurrentPage, onShowAuthModal }) {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, logout } = useAuth();
 
@@ -23,34 +23,29 @@ export default function Navbar({ setCurrentPage }) {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="cursor-pointer text-4xl text-white hover:text-gray-300 transition">
-            <FaGithub />
+          {/* Profile Icon */}
+          <div className="flex items-center gap-3 px-4 py-2 rounded-full border border-gray-500/30 bg-slate-900/20">
+            <FiUser size={20} className="text-gray-400" />
+            
+            {user ? (
+              <div className="flex items-center gap-3">
+                <span className="text-gray-300 text-sm">{user.email}</span>
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-400 hover:text-red-400 transition text-sm font-semibold"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="text-gray-300 hover:text-white transition text-sm font-semibold"
+              >
+                Sign In
+              </button>
+            )}
           </div>
-
-          {user ? (
-            <div className="flex items-center gap-4">
-              <span className="text-white text-sm">{user.email}</span>
-              <button
-                onClick={() => setCurrentPage("dashboard")}
-                className="bg-blue-600 hover:bg-blue-700 font-semibold text-white text-lg font-mono px-6 py-2 rounded-full transition"
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 font-semibold text-white text-lg font-mono px-6 py-2 rounded-full transition"
-              >
-                Logout
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowAuthModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 font-semibold text-white text-lg font-mono px-6 py-2 rounded-full transition"
-            >
-              Sign In
-            </button>
-          )}
         </div>
       </nav>
 
