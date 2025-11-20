@@ -4,8 +4,6 @@ import { useAuth, MOCK_URLS } from "../context/AuthContext";
 export default function ShortenInput() {
   const [url, setUrl] = useState("");
   const [shortUrl, setShortUrl] = useState("");
-  const [customAlias, setCustomAlias] = useState("");
-  const [useCustom, setUseCustom] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { token, user } = useAuth();
@@ -17,15 +15,6 @@ export default function ShortenInput() {
     } catch (e) {
       return false;
     }
-  };
-
-  const isValidAlias = (alias) => {
-    // Only alphanumeric, hyphens, and underscores allowed
-    return /^[a-zA-Z0-9_-]+$/.test(alias) && alias.length >= 3 && alias.length <= 30;
-  };
-
-  const aliasExists = (alias) => {
-    return MOCK_URLS.some((url) => url.customAlias === alias || url.shortId === alias);
   };
 
   const generateShortId = () => {
@@ -44,35 +33,18 @@ export default function ShortenInput() {
       return;
     }
 
-    // Validate custom alias if provided
-    if (useCustom && customAlias) {
-      if (!isValidAlias(customAlias)) {
-        setError("Alias must be 3-30 characters (alphanumeric, hyphens, underscores only)");
-        setShortUrl("");
-        return;
-      }
-      if (aliasExists(customAlias)) {
-        setError("This alias is already taken. Try another one.");
-        setShortUrl("");
-        return;
-      }
-    } else if (useCustom && !customAlias) {
-      setError("Please enter a custom alias");
-      return;
-    }
-
     setLoading(true);
     try {
       // Simulating API delay
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const finalAlias = useCustom ? customAlias : generateShortId();
-      const fullShortUrl = `http://localhost:3000/${finalAlias}`;
+      const finalId = generateShortId();
+      const fullShortUrl = `http://localhost:3000/${finalId}`;
 
       // Create new URL entry
       const newUrl = {
-        shortId: generateShortId(), // Always generate a random backup ID
-        customAlias: useCustom ? customAlias : null,
+        shortId: finalId,
+        customAlias: null,
         originalUrl: url,
         clicks: 0,
         createdAt: new Date().toISOString(),
@@ -84,8 +56,6 @@ export default function ShortenInput() {
       setShortUrl(fullShortUrl);
       setError("");
       setUrl("");
-      setCustomAlias("");
-      setUseCustom(false);
     } catch (err) {
       setError("Error creating short URL");
       setShortUrl("");
@@ -116,10 +86,10 @@ export default function ShortenInput() {
             placeholder="Enter your link (e.g., https://example.com)"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && !useCustom && handleShorten()}
+            onKeyPress={(e) => e.key === "Enter" && handleShorten()}
           />
 
-          {!useCustom && (
+          {
             <button
               onClick={handleShorten}
               disabled={loading}
@@ -127,48 +97,10 @@ export default function ShortenInput() {
             >
               {loading ? "..." : "Shorten →"}
             </button>
-          )}
+          }
         </div>
 
-        {/* Custom URL Toggle */}
-        <div className="flex items-center gap-3 px-6 py-3 bg-slate-900/30 rounded-full border border-gray-500/20">
-          <input
-            type="checkbox"
-            id="customToggle"
-            checked={useCustom}
-            onChange={(e) => {
-              setUseCustom(e.target.checked);
-              setCustomAlias("");
-              setError("");
-            }}
-            className="w-5 h-5 accent-white cursor-pointer"
-          />
-          <label htmlFor="customToggle" className="text-gray-300 cursor-pointer flex-1 text-sm">
-            Custom short URL
-          </label>
-        </div>
 
-        {/* Custom Alias Input - Conditional */}
-        {useCustom && (
-          <div className="flex items-center gap-4">
-            <div className="text-gray-400 text-sm font-medium min-w-fit">localhost:3000/</div>
-            <input
-              aria-label="Custom alias"
-              className="flex-1 bg-black/30 text-gray-100 placeholder-gray-300 rounded-full px-6 py-4 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur border border-gray-500/20"
-              placeholder="my-awesome-link (3-30 chars, alphanumeric + hyphens)"
-              value={customAlias}
-              onChange={(e) => setCustomAlias(e.target.value.toLowerCase())}
-              onKeyPress={(e) => e.key === "Enter" && handleShorten()}
-            />
-            <button
-              onClick={handleShorten}
-              disabled={loading}
-              className="bg-white text-gray-900 font-medium px-8 py-4 rounded-full shadow-md hover:scale-[.99] transition-transform disabled:opacity-50 whitespace-nowrap"
-            >
-              {loading ? "..." : "Create →"}
-            </button>
-          </div>
-        )}
 
         {/* Error / Success Message */}
         <div className="text-sm text-gray-300 min-h-[20px]">
