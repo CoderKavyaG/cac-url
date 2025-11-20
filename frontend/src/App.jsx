@@ -34,7 +34,7 @@ function App() {
         />
 
         {/* Main Content Area */}
-        <div className="flex-1 pl-32 pr-8 py-8 overflow-auto">
+        <div className="flex-1 pl-32 pr-8 py-8 overflow-auto md:overflow-auto pb-20 md:pb-8">
           {/* Home / Landing Page */}
           {currentPage === "home" && (
             <>

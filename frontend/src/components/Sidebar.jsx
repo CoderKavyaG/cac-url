@@ -29,8 +29,8 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, user, onSho
 
   return (
     <>
-      {/* Sidebar - Fixed on left side, vertically centered */}
-      <div className="fixed left-8 top-1/2 -translate-y-1/2 z-50">
+      {/* Desktop Sidebar - Fixed on left side, vertically centered */}
+      <div className="hidden md:block fixed left-8 top-1/2 -translate-y-1/2 z-50">
         {/* Sidebar Container */}
         <div className="bg-slate-900/40 border border-gray-500/20 backdrop-blur-sm rounded-2xl p-6 flex flex-col items-center gap-8 shadow-xl">
           {/* Navigation Icons */}
@@ -107,10 +107,58 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, user, onSho
         </div>
       </div>
 
+      {/* Mobile Bottom Navigation Bar - Fixed at bottom */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/50 border-t border-gray-500/20 backdrop-blur-sm z-50">
+        <div className="flex items-center justify-around px-2 py-3">
+          {navItems.map((item) => {
+            const IconComponent = item.icon;
+            const isActive = currentPage === item.name;
+
+            return (
+              <button
+                key={item.name}
+                onClick={() => handleNavClick(item)}
+                disabled={item.locked}
+                className={`
+                  flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-all duration-200 flex-1
+                  ${item.locked ? 'cursor-not-allowed' : ''}
+                  ${
+                    isActive
+                      ? 'bg-gray-700/50 text-gray-100'
+                      : item.locked
+                      ? 'text-gray-600'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }
+                `}
+                title={item.label}
+              >
+                <div className="relative">
+                  <IconComponent size={20} />
+                  {item.locked && <FiLock size={10} className="absolute -top-1 -right-1 text-red-400" />}
+                </div>
+                <span className="text-xs font-medium">{item.label}</span>
+              </button>
+            );
+          })}
+
+          {/* Logout Button - Mobile */}
+          {user && (
+            <button
+              onClick={handleLogoutClick}
+              className="flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-gray-400 hover:text-gray-200 transition-all duration-200 flex-1"
+              title="Logout"
+            >
+              <FiLogOut size={20} />
+              <span className="text-xs font-medium">Logout</span>
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 backdrop-blur-sm">
-          <div className="bg-slate-900/60 border border-gray-500/30 rounded-2xl p-8 w-96">
+          <div className="bg-slate-900/60 border border-gray-500/30 rounded-2xl p-8 w-96 mx-4">
             <h3 className="text-gray-100 text-lg font-bold mb-4">Confirm Logout</h3>
             <p className="text-gray-400 mb-6">Are you sure you want to logout?</p>
             <div className="flex gap-4">
