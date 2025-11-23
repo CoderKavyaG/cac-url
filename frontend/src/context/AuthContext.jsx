@@ -1,46 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 const AuthContext = createContext();
 
-// Test user data (mock database - no MongoDB needed)
-const TEST_USERS = {
-  "admin@gmail.com": {
-    id: "user1",
-    email: "admin@gmail.com",
-    password: "1233",
-  },
-};
-
-// Test URLs data (mock database)
-const MOCK_URLS = [
-  {
-    shortId: "abc123",
-    originalUrl: "https://www.google.com/search?q=javascript",
-    customAlias: null,
-    clicks: 42,
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    shortId: "def456",
-    originalUrl: "https://github.com/facebook/react",
-    customAlias: "react-repo",
-    clicks: 28,
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    shortId: "ghi789",
-    originalUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    customAlias: null,
-    clicks: 156,
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    shortId: "jkl012",
-    originalUrl: "https://stackoverflow.com/questions/",
-    customAlias: "stack-overflow",
-    clicks: 89,
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -59,37 +20,27 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Signup function (using custom data)
+  // Signup function (real MongoDB API)
   const signup = async (email, password) => {
     try {
-      // Simulating API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const response = await fetch(`${API_URL}/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-      // Check if user already exists
-      if (TEST_USERS[email]) {
-        throw new Error("User already exists");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Signup failed");
       }
 
-      // Create new user
-      const newUser = {
-        id: `user_${Date.now()}`,
-        email,
-        password,
-      };
-
-      // Add to test users (in real app, would save to DB)
-      TEST_USERS[email] = newUser;
-
-      // Create token
-      const token = `token_${Date.now()}`;
-
-      // Set state
-      setToken(token);
-      setUser(newUser);
+      const data = await response.json();
+      setToken(data.token);
+      setUser(data.user);
 
       // Save to localStorage
-      localStorage.setItem("authToken", token);
-      localStorage.setItem("authUser", JSON.stringify(newUser));
+      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("authUser", JSON.stringify(data.user));
 
       return { success: true };
     } catch (err) {
@@ -97,33 +48,50 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Login function (using custom data)
+  // Login function (real MongoDB API)
   const login = async (email, password) => {
     try {
-      // Simulating API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-      // Check if user exists
-      const user = TEST_USERS[email];
-      if (!user) {
-        throw new Error("User not found");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Login failed");
       }
 
-      // Check password
-      if (user.password !== password) {
-        throw new Error("Invalid password");
-      }
-
-      // Create token
-      const token = `token_${Date.now()}`;
-
-      // Set state
-      setToken(token);
-      setUser(user);
+      const data = await response.json();
+      setToken(data.token);
+      setUser(data.user);
 
       // Save to localStorage
-      localStorage.setItem("authToken", token);
-      localStorage.setItem("authUser", JSON.stringify(user));
+      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("authUser", JSON.stringify(data.user));
+
+      // Transfer anonymous URLs to user account
+      const anonymousUrls = localStorage.getItem("anonymousUrls");
+      if (anonymousUrls) {
+        try {
+          const urls = JSON.parse(anonymousUrls);
+          if (urls.length > 0) {
+            // Send anonymous URLs to backend for transfer
+            await fetch(`${API_URL}/urls/transfer`, {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${data.token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ urls }),
+            });
+            // Clear anonymous URLs after successful transfer
+            localStorage.removeItem("anonymousUrls");
+          }
+        } catch (err) {
+          console.error("Error transferring anonymous URLs:", err);
+        }
+      }
 
       return { success: true };
     } catch (err) {
@@ -153,6 +121,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
-// Export mock data for use in other components
-export { TEST_USERS, MOCK_URLS };

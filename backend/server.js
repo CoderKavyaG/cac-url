@@ -6,6 +6,7 @@ const cors = require("cors");
 const { nanoid } = require("nanoid");
 const jwt = require("jsonwebtoken");
 const Url = require("./models/Url")
+const authMiddleware = require("./middleware/auth");
 const mongodburl = process.env.MONGODB_URL || process.env.MONGO_URL || process.env.MONGO_URI;
 
 const authRoutes = require("./routes/auth");
@@ -52,11 +53,86 @@ app.post("/shorten", async (req,res) => {
     }
 });
 
-// GET /urls - get all URLs (public endpoint)
-app.get("/urls", async (req, res) => {
+// POST /urls/transfer - protected route to transfer anonymous URLs to user account
+app.post("/urls/transfer", authMiddleware, async (req, res) => {
     try {
-        // Get all URLs (no auth required)
-        const urls = await Url.find({ isDeleted: false }).sort({ createdAt: -1 });
+        const userId = req.user.userId;
+        const { urls } = req.body;
+
+        if (!Array.isArray(urls) || urls.length === 0) {
+            return res.status(400).json({ error: "No URLs to transfer" });
+        }
+
+        const transferredUrls = [];
+
+        for (const urlData of urls) {
+            try {
+                // Check if URL already exists (by shortId or customAlias)
+                const existingUrl = await Url.findOne({
+                    $or: [
+                        { shortId: urlData.shortId },
+                        { customAlias: urlData.customAlias }
+                    ]
+                });
+
+                if (!existingUrl) {
+                    // Create new URL with userId
+                    const newUrl = new Url({
+                        originalUrl: urlData.originalUrl,
+                        shortId: urlData.shortId,
+                        customAlias: urlData.customAlias || null,
+                        userId: userId,
+                        clicks: urlData.clicks || 0,
+                        createdAt: new Date(urlData.createdAt),
+                        clickHistory: urlData.clickHistory || []
+                    });
+                    
+                    await newUrl.save();
+                    transferredUrls.push({
+                        shortId: urlData.shortId,
+                        status: "transferred"
+                    });
+                } else if (!existingUrl.userId) {
+                    // URL exists but is anonymous, assign to user
+                    existingUrl.userId = userId;
+                    await existingUrl.save();
+                    transferredUrls.push({
+                        shortId: urlData.shortId,
+                        status: "claimed"
+                    });
+                } else {
+                    // URL already belongs to someone else
+                    transferredUrls.push({
+                        shortId: urlData.shortId,
+                        status: "conflict"
+                    });
+                }
+            } catch (err) {
+                console.error(`Error transferring URL ${urlData.shortId}:`, err);
+                transferredUrls.push({
+                    shortId: urlData.shortId,
+                    status: "error",
+                    error: err.message
+                });
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `${transferredUrls.filter(u => u.status === "transferred" || u.status === "claimed").length} URLs transferred`,
+            results: transferredUrls
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+app.get("/urls", authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        // Get all URLs created by this user
+        const urls = await Url.find({ userId, isDeleted: false }).sort({ createdAt: -1 });
 
         res.json({
             urls: urls.map(url => ({
@@ -78,15 +154,16 @@ app.get("/urls", async (req, res) => {
     }
 });
 
-// DELETE /urls/:shortId - delete a URL (public endpoint)
-app.delete("/urls/:shortId", async (req, res) => {
+// DELETE /urls/:shortId - protected route to delete a user's URL
+app.delete("/urls/:shortId", authMiddleware, async (req, res) => {
     try {
         const { shortId } = req.params;
+        const userId = req.user.userId;
         
-        // Find the URL
-        const url = await Url.findOne({ shortId });
+        // Find and verify ownership
+        const url = await Url.findOne({ shortId, userId });
         if (!url) {
-            return res.status(404).json({ error: "URL not found" });
+            return res.status(404).json({ error: "URL not found or unauthorized" });
         }
 
         // Soft delete - mark as deleted for 30 days recovery
@@ -103,23 +180,10 @@ app.delete("/urls/:shortId", async (req, res) => {
 });
 
 // POST /urls/:shortId/recover - protected route to recover a deleted URL
-app.post("/urls/:shortId/recover", async (req, res) => {
+app.post("/urls/:shortId/recover", authMiddleware, async (req, res) => {
     try {
         const { shortId } = req.params;
-        
-        // Verify JWT token
-        const token = req.headers.authorization?.split(" ")[1];
-        if (!token) {
-            return res.status(401).json({ error: "No token provided" });
-        }
-
-        let userId;
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || "Kavyasecretkey12323");
-            userId = decoded.userId;
-        } catch (err) {
-            return res.status(401).json({ error: "Invalid token" });
-        }
+        const userId = req.user.userId;
 
         // Find the deleted URL
         const url = await Url.findOne({ shortId, userId, isDeleted: true });
@@ -149,10 +213,11 @@ app.post("/urls/:shortId/recover", async (req, res) => {
 });
 
 // PUT /urls/:shortId/alias - protected route to update custom alias
-app.put("/urls/:shortId/alias", async (req, res) => {
+app.put("/urls/:shortId/alias", authMiddleware, async (req, res) => {
     try {
         const { shortId } = req.params;
         const { customAlias } = req.body;
+        const userId = req.user.userId;
 
         if (!customAlias || typeof customAlias !== "string") {
             return res.status(400).json({ error: "Invalid alias" });
@@ -161,20 +226,6 @@ app.put("/urls/:shortId/alias", async (req, res) => {
         // Validate alias format
         if (!/^[a-zA-Z0-9_-]+$/.test(customAlias)) {
             return res.status(400).json({ error: "Alias can only contain letters, numbers, hyphens, and underscores" });
-        }
-
-        // Verify JWT token
-        const token = req.headers.authorization?.split(" ")[1];
-        if (!token) {
-            return res.status(401).json({ error: "No token provided" });
-        }
-
-        let userId;
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || "Kavyasecretkey12323");
-            userId = decoded.userId;
-        } catch (err) {
-            return res.status(401).json({ error: "Invalid token" });
         }
 
         // Find and verify ownership

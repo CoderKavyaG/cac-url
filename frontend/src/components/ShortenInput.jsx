@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { useAuth, MOCK_URLS } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export default function ShortenInput() {
   const [url, setUrl] = useState("");
@@ -17,10 +19,6 @@ export default function ShortenInput() {
     }
   };
 
-  const generateShortId = () => {
-    return Math.random().toString(36).substring(2, 8);
-  };
-
   const handleShorten = async () => {
     if (!url) {
       setError("Please enter a URL");
@@ -35,29 +33,48 @@ export default function ShortenInput() {
 
     setLoading(true);
     try {
-      // Simulating API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const response = await fetch(`${API_URL}/shorten`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { "Authorization": `Bearer ${token}` }),
+        },
+        body: JSON.stringify({ originalUrl: url }),
+      });
 
-      const finalId = generateShortId();
-      const fullShortUrl = `http://localhost:3000/${finalId}`;
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to shorten URL");
+      }
 
-      // Create new URL entry
-      const newUrl = {
-        shortId: finalId,
-        customAlias: null,
-        originalUrl: url,
-        clicks: 0,
-        createdAt: new Date().toISOString(),
-      };
-
-      // Add to mock URLs (in real app, would save to DB)
-      MOCK_URLS.push(newUrl);
-
-      setShortUrl(fullShortUrl);
+      const data = await response.json();
+      setShortUrl(data.shortUrl);
       setError("");
       setUrl("");
+
+      // If user is not logged in, save to localStorage
+      if (!user) {
+        const newAnonymousUrl = {
+          originalUrl: url,
+          shortId: data.shortUrl.split("/").pop(),
+          shortUrl: data.shortUrl,
+          clicks: 0,
+          createdAt: new Date().toISOString(),
+          customAlias: null,
+        };
+
+        // Get existing anonymous URLs
+        const existingUrls = localStorage.getItem("anonymousUrls");
+        const anonymousUrls = existingUrls ? JSON.parse(existingUrls) : [];
+        
+        // Add new URL
+        anonymousUrls.unshift(newAnonymousUrl);
+        
+        // Store back (keep last 50 URLs)
+        localStorage.setItem("anonymousUrls", JSON.stringify(anonymousUrls.slice(0, 50)));
+      }
     } catch (err) {
-      setError("Error creating short URL");
+      setError(err.message || "Error creating short URL");
       setShortUrl("");
     } finally {
       setLoading(false);

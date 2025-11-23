@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
-export default function SignUpModal({ onClose, testUser }) {
+export default function SignUpModal({ onClose }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -23,15 +23,19 @@ export default function SignUpModal({ onClose, testUser }) {
     }
 
     setLoading(true);
+    setError("");
     const result = isSignUp ? await signup(email, password) : await login(email, password);
     setLoading(false);
 
     if (result.success) {
       setEmail("");
       setPassword("");
-      onClose();
+      // Small delay to ensure state is updated before closing
+      setTimeout(() => {
+        onClose();
+      }, 300);
     } else {
-      setError(result.error);
+      setError(result.error || "Authentication failed");
     }
   };
 
@@ -40,12 +44,6 @@ export default function SignUpModal({ onClose, testUser }) {
     setPassword("");
     setError("");
     setIsSignUp(!isSignUp);
-  };
-
-  const fillTestCredentials = () => {
-    setEmail(testUser?.email || "admin@gmail.com");
-    setPassword(testUser?.password || "1233");
-    setError("");
   };
 
   return (
@@ -68,21 +66,6 @@ export default function SignUpModal({ onClose, testUser }) {
         {error && (
           <div className="bg-red-950/30 text-red-300 px-4 py-2 rounded mb-4 text-sm border border-red-500/20">
             {error}
-          </div>
-        )}
-
-        {/* Test Credentials Info */}
-        {!isSignUp && testUser && (
-          <div className="bg-slate-800/40 border border-gray-500/20 rounded-lg p-4 mb-6 text-sm">
-            <p className="text-gray-400 mb-2 font-semibold">Test Credentials:</p>
-            <p className="text-gray-300">📧 Email: <span className="font-mono">{testUser.email}</span></p>
-            <p className="text-gray-300">🔑 Password: <span className="font-mono">{testUser.password}</span></p>
-            <button
-              onClick={fillTestCredentials}
-              className="mt-3 w-full bg-slate-700/50 hover:bg-slate-700 text-gray-300 text-xs py-2 rounded transition border border-gray-500/20"
-            >
-              Auto-fill Test Credentials
-            </button>
           </div>
         )}
 

@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth, MOCK_URLS } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { FiCopy, FiTrash2, FiEye, FiLock, FiRefreshCw } from 'react-icons/fi';
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthModal }) {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [urls, setUrls] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [copied, setCopied] = useState(null);
   const [activeTab, setActiveTab] = useState('all'); // 'all' or 'custom'
   const [customAlias, setCustomAlias] = useState('');
@@ -34,17 +37,37 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
   }
 
   useEffect(() => {
-    // Load URLs only once on mount
-    fetchUrls();
-  }, []);
+    // Load URLs when component mounts or when user/token changes
+    if (user && token) {
+      fetchUrls(true);
+    }
+  }, [user, token]);
 
-  const fetchUrls = async () => {
+  const fetchUrls = async (showTransferMessage = false) => {
     try {
       setLoading(true);
-      // Using mock data instead of MongoDB API
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      setUrls([...MOCK_URLS]);
+      const response = await fetch(`${API_URL}/urls`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Session expired. Please log in again.");
+        }
+        throw new Error("Failed to fetch URLs");
+      }
+
+      const data = await response.json();
+      setUrls(data.urls || []);
       setError('');
+      
+      if (showTransferMessage && data.urls.length > 0) {
+        setSuccess(`✓ Loaded ${data.urls.length} URL(s) to your dashboard!`);
+        setTimeout(() => setSuccess(''), 5000);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -56,15 +79,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
     return /^[a-zA-Z0-9_-]+$/.test(alias) && alias.length >= 3 && alias.length <= 30;
   };
 
-  const aliasExists = (alias) => {
-    return MOCK_URLS.some((url) => url.customAlias === alias || url.shortId === alias);
-  };
-
-  const generateShortId = () => {
-    return Math.random().toString(36).substring(2, 8);
-  };
-
-  const handleCreateCustomAlias = async (originalUrl) => {
+  const handleCreateCustomAlias = async (shortId, originalUrl) => {
     if (!customAlias) {
       setCustomAliasError('Please enter a custom alias');
       return;
@@ -75,32 +90,29 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
       return;
     }
 
-    if (aliasExists(customAlias)) {
-      setCustomAliasError('This alias is already taken. Try another one.');
-      return;
-    }
-
     setCustomAliasLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const response = await fetch(`${API_URL}/urls/${shortId}/alias`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ customAlias }),
+      });
 
-      // Create new URL entry with custom alias
-      const newUrl = {
-        shortId: generateShortId(),
-        customAlias: customAlias,
-        originalUrl: originalUrl,
-        clicks: 0,
-        createdAt: new Date().toISOString(),
-      };
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to create alias");
+      }
 
-      MOCK_URLS.push(newUrl);
-      setUrls([...MOCK_URLS]);
+      // Refresh URLs to get updated data
+      await fetchUrls();
       setCustomAlias('');
-      setCustomAliasError('');
       setCustomAliasError('✓ Custom alias created!');
       setTimeout(() => setCustomAliasError(''), 2000);
     } catch (err) {
-      setCustomAliasError('Error creating custom alias');
+      setCustomAliasError(err.message || 'Error creating custom alias');
     } finally {
       setCustomAliasLoading(false);
     }
@@ -108,8 +120,8 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
 
   const handleCopy = (url) => {
     const urlToCopy = url.customAlias 
-      ? `http://localhost:3000/${url.customAlias}`
-      : `http://localhost:3000/${url.shortId}`;
+      ? `${API_URL}/${url.customAlias}`
+      : `${API_URL}/${url.shortId}`;
     
     navigator.clipboard.writeText(urlToCopy);
     setCopied(url.shortId);
@@ -119,10 +131,18 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
   const handleDelete = async (shortId) => {
     if (!window.confirm('Delete this URL? This action cannot be undone.')) return;
     try {
-      const index = MOCK_URLS.findIndex(url => url.shortId === shortId);
-      if (index > -1) {
-        MOCK_URLS.splice(index, 1);
+      const response = await fetch(`${API_URL}/urls/${shortId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete URL");
       }
+
       setUrls(urls.filter(url => url.shortId !== shortId));
     } catch (err) {
       setError(err.message);
@@ -164,6 +184,12 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
         </div>
       )}
 
+      {success && (
+        <div className="bg-green-950/30 border border-green-700/50 rounded-lg p-4 mb-6 text-green-400 text-sm">
+          {success}
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-gray-500/20">
         <button
@@ -194,7 +220,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
           <h2 className="text-lg font-semibold text-white mb-4">Create Custom Short URL</h2>
           <div className="space-y-3">
             <div className="flex items-center gap-3 px-4 py-3 bg-black/30 rounded-lg border border-gray-500/20">
-              <span className="text-gray-400 font-mono text-sm">localhost:3000/</span>
+              <span className="text-gray-400 font-mono text-sm">{API_URL}/</span>
               <input
                 type="text"
                 value={customAlias}
@@ -279,7 +305,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
                   <p className="text-xs text-purple-400 uppercase tracking-wider font-semibold mb-2">Add Custom Alias</p>
                   <div className="flex gap-2">
                     <div className="flex-1 flex items-center gap-1">
-                      <span className="text-xs text-gray-500">localhost:3000/</span>
+                      <span className="text-xs text-gray-500">{API_URL}/</span>
                       <input
                         type="text"
                         value={customAlias}
@@ -290,7 +316,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
                       />
                     </div>
                     <button
-                      onClick={() => handleCreateCustomAlias(url.originalUrl)}
+                      onClick={() => handleCreateCustomAlias(url.shortId, url.originalUrl)}
                       disabled={customAliasLoading}
                       className="bg-purple-950/40 hover:bg-purple-950/60 disabled:opacity-50 text-purple-300 px-2 py-1 rounded text-xs font-medium transition"
                     >

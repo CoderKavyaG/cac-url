@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./index.css";
 import { useAuth } from "./context/AuthContext";
 import Navbar from "./components/Navbar";
@@ -9,10 +9,18 @@ import LinkDetailsPage from "./components/Dashboard/LinkDetailsPage";
 import SignUpModal from "./components/SignUpModal";
 
 function App() {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
   const [currentPage, setCurrentPage] = useState("home");
   const [selectedLink, setSelectedLink] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authChanged, setAuthChanged] = useState(false);
+
+  // Force re-render when auth state changes
+  useEffect(() => {
+    if (user) {
+      setAuthChanged(true);
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-r from-stone-900 via-neutral-800 to-gray-900 text-white">
@@ -75,7 +83,6 @@ function App() {
       {showAuthModal && (
         <SignUpModal 
           onClose={() => setShowAuthModal(false)}
-          testUser={{ email: 'admin@gmail.com', password: '1233' }}
         />
       )}
     </div>

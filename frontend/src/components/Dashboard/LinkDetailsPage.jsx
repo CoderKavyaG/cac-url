@@ -1,11 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { FiArrowLeft, FiCopy } from 'react-icons/fi';
+import { 
+  FaGoogle, 
+  FaTwitter, 
+  FaLinkedin, 
+  FaFacebook, 
+  FaReddit, 
+  FaGithub, 
+  FaLink 
+} from 'react-icons/fa';
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export default function LinkDetailsPage({ link, onBack }) {
   const [copied, setCopied] = useState(false);
+  const [referrers, setReferrers] = useState([]);
+
+  useEffect(() => {
+    // Parse real referrer data from clickHistory
+    if (link.clickHistory && Array.isArray(link.clickHistory)) {
+      const referrerMap = {};
+      
+      link.clickHistory.forEach(click => {
+        const referer = click.referer || 'Direct';
+        referrerMap[referer] = (referrerMap[referer] || 0) + 1;
+      });
+
+      // Sort by count and convert to array
+      const sortedReferrers = Object.entries(referrerMap)
+        .map(([referrer, count]) => ({ referrer, clicks: count }))
+        .sort((a, b) => b.clicks - a.clicks)
+        .slice(0, 5);
+
+      setReferrers(sortedReferrers);
+    }
+  }, [link]);
 
   const handleCopy = () => {
-    const fullUrl = `http://localhost:3000/${link.shortId}`;
+    const fullUrl = link.customAlias 
+      ? `${API_URL}/${link.customAlias}`
+      : `${API_URL}/${link.shortId}`;
     navigator.clipboard.writeText(fullUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -16,33 +50,35 @@ export default function LinkDetailsPage({ link, onBack }) {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  // Mock data for click history over time
-  const clickHistory = [
-    { day: 'Mon', clicks: 12 },
-    { day: 'Tue', clicks: 19 },
-    { day: 'Wed', clicks: 15 },
-    { day: 'Thu', clicks: 25 },
-    { day: 'Fri', clicks: 30 },
-    { day: 'Sat', clicks: 8 },
-    { day: 'Sun', clicks: 5 },
-  ];
+  // Calculate clicks over last 7 days from real data
+  const getClickHistoryData = () => {
+    const now = new Date();
+    const days = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      days.push({
+        day: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        date: date.toDateString(),
+        clicks: 0
+      });
+    }
 
-  const maxClicks = Math.max(...clickHistory.map(d => d.clicks));
+    // Count clicks per day
+    if (link.clickHistory && Array.isArray(link.clickHistory)) {
+      link.clickHistory.forEach(click => {
+        const clickDate = new Date(click.timestamp).toDateString();
+        const dayData = days.find(d => d.date === clickDate);
+        if (dayData) dayData.clicks++;
+      });
+    }
 
-  // Mock data for device breakdown
-  const deviceBreakdown = [
-    { name: 'Mobile', percentage: 65, count: 208 },
-    { name: 'Desktop', percentage: 30, count: 96 },
-    { name: 'Tablet', percentage: 5, count: 16 },
-  ];
+    return days;
+  };
 
-  // Mock data for browser breakdown
-  const browserBreakdown = [
-    { name: 'Chrome', percentage: 45, count: 144 },
-    { name: 'Safari', percentage: 25, count: 80 },
-    { name: 'Firefox', percentage: 20, count: 64 },
-    { name: 'Others', percentage: 10, count: 32 },
-  ];
+  const clickHistory = getClickHistoryData();
+  const maxClicks = Math.max(...clickHistory.map(d => d.clicks), 1);
 
   return (
     <div className="w-full">
@@ -131,72 +167,80 @@ export default function LinkDetailsPage({ link, onBack }) {
           </div>
         </div>
 
-        {/* Device Breakdown */}
-        <div className="bg-slate-900/40 border border-gray-500/10 rounded-2xl p-8">
-          <h2 className="text-xl font-bold text-white mb-6">Device Breakdown</h2>
-
-          <div className="space-y-4">
-            {deviceBreakdown.map((device, idx) => (
-              <div key={idx}>
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm text-gray-300">{device.name}</p>
-                  <p className="text-sm font-bold text-white">{device.percentage}%</p>
-                </div>
-                <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                  <div
-                    className="bg-slate-600 h-full rounded-full transition-all"
-                    style={{ width: `${device.percentage}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">{device.count} clicks</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Browser Breakdown */}
-        <div className="bg-slate-900/40 border border-gray-500/10 rounded-2xl p-8">
-          <h2 className="text-xl font-bold text-white mb-6">Browser Breakdown</h2>
-
-          <div className="space-y-4">
-            {browserBreakdown.map((browser, idx) => (
-              <div key={idx}>
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm text-gray-300">{browser.name}</p>
-                  <p className="text-sm font-bold text-white">{browser.percentage}%</p>
-                </div>
-                <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                  <div
-                    className="bg-slate-600 h-full rounded-full transition-all"
-                    style={{ width: `${browser.percentage}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">{browser.count} clicks</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Top Referrers */}
-        <div className="lg:col-span-3 bg-slate-900/40 border border-gray-500/10 rounded-2xl p-8">
+        <div className="bg-slate-900/40 border border-gray-500/10 rounded-2xl p-8">
           <h2 className="text-xl font-bold text-white mb-6">Top Referrers</h2>
 
           <div className="space-y-3">
-            {[
-              { referrer: 'Direct', clicks: 142 },
-              { referrer: 'Google', clicks: 89 },
-              { referrer: 'Twitter', clicks: 45 },
-              { referrer: 'LinkedIn', clicks: 28 },
-              { referrer: 'Others', clicks: 16 },
-            ].map((ref, idx) => (
-              <div key={idx} className="flex items-center justify-between p-3 bg-slate-800/30 rounded-lg">
-                <p className="text-sm text-gray-300">{ref.referrer}</p>
-                <p className="text-sm font-bold text-white">{ref.clicks} clicks</p>
+            {referrers.length > 0 ? (
+              referrers.map((ref, idx) => {
+                const getReferrerIcon = (referrer) => {
+                  const lower = referrer.toLowerCase();
+                  if (lower.includes('google')) return <FaGoogle className="text-blue-400" />;
+                  if (lower.includes('twitter') || lower.includes('x.com')) return <FaTwitter className="text-blue-300" />;
+                  if (lower.includes('linkedin')) return <FaLinkedin className="text-blue-600" />;
+                  if (lower.includes('facebook')) return <FaFacebook className="text-blue-500" />;
+                  if (lower.includes('reddit')) return <FaReddit className="text-orange-600" />;
+                  if (lower.includes('github')) return <FaGithub className="text-gray-300" />;
+                  if (lower === 'direct') return <FaLink className="text-gray-400" />;
+                  return <FaLink className="text-gray-400" />;
+                };
+
+                return (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-slate-800/30 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl">
+                        {getReferrerIcon(ref.referrer)}
+                      </div>
+                      <p className="text-sm text-gray-300">{ref.referrer}</p>
+                    </div>
+                    <p className="text-sm font-bold text-white">{ref.clicks}</p>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="p-6 text-center text-gray-400">
+                <p className="text-sm">No referrer data available yet</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
+
+      {/* Full Width Referrers Table */}
+      {referrers.length > 5 && (
+        <div className="mt-8 bg-slate-900/40 border border-gray-500/10 rounded-2xl p-8">
+          <h2 className="text-xl font-bold text-white mb-6">All Referrers</h2>
+
+          <div className="space-y-2">
+            {referrers.slice(0, 10).map((ref, idx) => {
+              const getReferrerIcon = (referrer) => {
+                const lower = referrer.toLowerCase();
+                if (lower.includes('google')) return <FaGoogle className="text-blue-400" />;
+                if (lower.includes('twitter') || lower.includes('x.com')) return <FaTwitter className="text-blue-300" />;
+                if (lower.includes('linkedin')) return <FaLinkedin className="text-blue-600" />;
+                if (lower.includes('facebook')) return <FaFacebook className="text-blue-500" />;
+                if (lower.includes('reddit')) return <FaReddit className="text-orange-600" />;
+                if (lower.includes('github')) return <FaGithub className="text-gray-300" />;
+                if (lower === 'direct') return <FaLink className="text-gray-400" />;
+                return <FaLink className="text-gray-400" />;
+              };
+
+              return (
+                <div key={idx} className="flex items-center justify-between p-3 hover:bg-slate-800/30 rounded-lg transition">
+                  <div className="flex items-center gap-3">
+                    <div className="text-lg">
+                      {getReferrerIcon(ref.referrer)}
+                    </div>
+                    <p className="text-sm text-gray-300">{ref.referrer}</p>
+                  </div>
+                  <p className="text-sm font-bold text-white">{ref.clicks} clicks</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Back Button */}
       <div className="mt-8">
