@@ -7,6 +7,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [otpSent, setOtpSent] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState(null);
 
   // Load token and user from localStorage on mount
   useEffect(() => {
@@ -20,51 +22,47 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Signup function (real MongoDB API)
-  const signup = async (email, password) => {
+  // Step 1: Send OTP to email
+  const sendOtp = async (email) => {
     try {
-      const response = await fetch(`${API_URL}/auth/signup`, {
+      const response = await fetch(`${API_URL}/auth/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Signup failed");
+        throw new Error(error.error || "Failed to send OTP");
       }
 
-      const data = await response.json();
-      setToken(data.token);
-      setUser(data.user);
-
-      // Save to localStorage
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("authUser", JSON.stringify(data.user));
-
+      setPendingEmail(email);
+      setOtpSent(true);
       return { success: true };
     } catch (err) {
       return { success: false, error: err.message };
     }
   };
 
-  // Login function (real MongoDB API)
-  const login = async (email, password) => {
+  // Step 2: Verify OTP and login/signup
+  const verifyOtp = async (email, otp) => {
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
+      const response = await fetch(`${API_URL}/auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, otp }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Login failed");
+        throw new Error(error.error || "OTP verification failed");
       }
 
       const data = await response.json();
       setToken(data.token);
       setUser(data.user);
+      setOtpSent(false);
+      setPendingEmail(null);
 
       // Save to localStorage
       localStorage.setItem("authToken", data.token);
@@ -103,12 +101,23 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setToken(null);
     setUser(null);
+    setOtpSent(false);
+    setPendingEmail(null);
     localStorage.removeItem("authToken");
     localStorage.removeItem("authUser");
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, signup, login, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      token, 
+      loading, 
+      sendOtp, 
+      verifyOtp, 
+      logout,
+      otpSent,
+      pendingEmail
+    }}>
       {children}
     </AuthContext.Provider>
   );

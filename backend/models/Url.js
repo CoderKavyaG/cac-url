@@ -1,63 +1,71 @@
-const mongoose = require("mongoose");
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/database");
+const User = require("./User");
 
-const UrlSchema = new mongoose.Schema({
+const Url = sequelize.define("Url", {
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+    },
     originalUrl: {
-        type: String,
-        required: true,
+        type: DataTypes.TEXT,
+        allowNull: false,
     },
     shortId: {
-        type: String,
-        required: true,
+        type: DataTypes.STRING,
+        allowNull: false,
         unique: true,
     },
     customAlias: {
-        type: String,
-        required: false,
+        type: DataTypes.STRING,
         unique: true,
         sparse: true,
+        defaultValue: null,
     },
     userId: {
-        type: String,
-        required: false,
-        default: null,
+        type: DataTypes.INTEGER,
+        references: {
+            model: User,
+            key: "id",
+        },
+        defaultValue: null,
     },
     email: {
-        type: String,
-        required: false,
+        type: DataTypes.STRING,
+        defaultValue: null,
     },
     createdAt: {
-        type: Date,
-        default: Date.now,
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
     },
     expiresAt: {
-        type: Date,
-        required: false,
-        default: null,
+        type: DataTypes.DATE,
+        defaultValue: null,
     },
     isDeleted: {
-        type: Boolean,
-        default: false,
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
     },
     deletedAt: {
-        type: Date,
-        required: false,
-        default: null,
+        type: DataTypes.DATE,
+        defaultValue: null,
     },
     clicks: {
-        type: Number,
-        default: 0,
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
     },
-    clickHistory: [
-        {
-            timestamp: {
-                type: Date,
-                default: Date.now,
-            },
-            userAgent: String,
-            ipAddress: String,
-            referer: String,
-        }
-    ],
+    clickHistory: {
+        type: DataTypes.JSON,
+        defaultValue: [],
+    },
+}, {
+    timestamps: false,
+    tableName: "urls",
 });
 
-module.exports = mongoose.model("Url", UrlSchema);
+// Association
+Url.belongsTo(User, { foreignKey: "userId" });
+User.hasMany(Url, { foreignKey: "userId" });
+
+module.exports = Url;

@@ -1,7 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 
-const User = sequelize.define("User", {
+const Otp = sequelize.define("Otp", {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -10,24 +10,32 @@ const User = sequelize.define("User", {
     email: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true,
         lowercase: true,
         trim: true,
-        validate: {
-            isEmail: true,
-        },
+    },
+    otp: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    expiresAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+    },
+    attempts: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+    },
+    verified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
     },
     createdAt: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
     },
-    updatedAt: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW,
-    },
 }, {
-    timestamps: true,
-    tableName: "users",
+    timestamps: false,
+    tableName: "otps",
 });
 
-module.exports = User;
+module.exports = Otp;

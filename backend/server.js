@@ -1,13 +1,14 @@
 require('dotenv').config();
 
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
 const { nanoid } = require("nanoid");
 const jwt = require("jsonwebtoken");
-const Url = require("./models/Url")
+const sequelize = require("./config/database");
+const Url = require("./models/Url");
+const User = require("./models/User");
+const Otp = require("./models/Otp");
 const authMiddleware = require("./middleware/auth");
-const mongodburl = process.env.MONGODB_URL || process.env.MONGO_URL || process.env.MONGO_URI;
 
 const authRoutes = require("./routes/auth");
 
@@ -16,12 +17,12 @@ app.use(cors());
 app.use(express.json());
 app.use("/auth", authRoutes);
 
-app.post("/shorten", async (req,res) => {
+app.post("/shorten", async (req, res) => {
     try {
         const { originalUrl } = req.body; 
 
-        if(!originalUrl || typeof originalUrl !== "string" || !originalUrl.startsWith("http")){
-            return res.status(400).json({error: 'Invalid url'});
+        if (!originalUrl || typeof originalUrl !== "string" || !originalUrl.startsWith("http")) {
+            return res.status(400).json({ error: 'Invalid url' });
         }
 
         // Get userId from JWT if user is logged in
@@ -38,12 +39,11 @@ app.post("/shorten", async (req,res) => {
         }
 
         const shortId = nanoid(6);
-        const newUrl = new Url({ 
-            originalUrl, 
+        const newUrl = await Url.create({
+            originalUrl,
             shortId,
-            userId
+            userId: userId || null
         });
-        await newUrl.save();
 
         const shortUrlFull = `${process.env.API_URL || 'http://localhost:3000'}/${shortId}`;
         res.json({ shortUrl: shortUrlFull, userId: userId ? "logged-in" : "anonymous" });
@@ -69,15 +69,17 @@ app.post("/urls/transfer", authMiddleware, async (req, res) => {
             try {
                 // Check if URL already exists (by shortId or customAlias)
                 const existingUrl = await Url.findOne({
-                    $or: [
-                        { shortId: urlData.shortId },
-                        { customAlias: urlData.customAlias }
-                    ]
+                    where: {
+                        [require('sequelize').Op.or]: [
+                            { shortId: urlData.shortId },
+                            { customAlias: urlData.customAlias }
+                        ]
+                    }
                 });
 
                 if (!existingUrl) {
                     // Create new URL with userId
-                    const newUrl = new Url({
+                    const newUrl = await Url.create({
                         originalUrl: urlData.originalUrl,
                         shortId: urlData.shortId,
                         customAlias: urlData.customAlias || null,
@@ -87,7 +89,6 @@ app.post("/urls/transfer", authMiddleware, async (req, res) => {
                         clickHistory: urlData.clickHistory || []
                     });
                     
-                    await newUrl.save();
                     transferredUrls.push({
                         shortId: urlData.shortId,
                         status: "transferred"
@@ -127,12 +128,19 @@ app.post("/urls/transfer", authMiddleware, async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
+
 app.get("/urls", authMiddleware, async (req, res) => {
     try {
         const userId = req.user.userId;
 
         // Get all URLs created by this user
-        const urls = await Url.find({ userId, isDeleted: false }).sort({ createdAt: -1 });
+        const urls = await Url.findAll({
+            where: {
+                userId,
+                isDeleted: false
+            },
+            order: [['createdAt', 'DESC']]
+        });
 
         res.json({
             urls: urls.map(url => ({
@@ -161,7 +169,10 @@ app.delete("/urls/:shortId", authMiddleware, async (req, res) => {
         const userId = req.user.userId;
         
         // Find and verify ownership
-        const url = await Url.findOne({ shortId, userId });
+        const url = await Url.findOne({
+            where: { shortId, userId }
+        });
+
         if (!url) {
             return res.status(404).json({ error: "URL not found or unauthorized" });
         }
@@ -186,7 +197,10 @@ app.post("/urls/:shortId/recover", authMiddleware, async (req, res) => {
         const userId = req.user.userId;
 
         // Find the deleted URL
-        const url = await Url.findOne({ shortId, userId, isDeleted: true });
+        const url = await Url.findOne({
+            where: { shortId, userId, isDeleted: true }
+        });
+
         if (!url) {
             return res.status(404).json({ error: "Deleted URL not found or already recovered" });
         }
@@ -195,7 +209,7 @@ app.post("/urls/:shortId/recover", authMiddleware, async (req, res) => {
         const now = new Date();
         if (url.expiresAt && now > url.expiresAt) {
             // Permanently delete after 30 days
-            await Url.deleteOne({ shortId, userId });
+            await Url.destroy({ where: { shortId, userId } });
             return res.status(400).json({ error: "Recovery period has expired (30 days)" });
         }
 
@@ -229,13 +243,24 @@ app.put("/urls/:shortId/alias", authMiddleware, async (req, res) => {
         }
 
         // Find and verify ownership
-        const url = await Url.findOne({ shortId, userId });
+        const url = await Url.findOne({
+            where: { shortId, userId }
+        });
+
         if (!url) {
             return res.status(404).json({ error: "URL not found or unauthorized" });
         }
 
         // Check if alias already exists (for other users)
-        const existingAlias = await Url.findOne({ customAlias, userId: { $ne: userId } });
+        const existingAlias = await Url.findOne({
+            where: {
+                customAlias,
+                userId: {
+                    [require('sequelize').Op.ne]: userId
+                }
+            }
+        });
+
         if (existingAlias) {
             return res.status(400).json({ error: "Alias already taken" });
         }
@@ -252,63 +277,69 @@ app.put("/urls/:shortId/alias", authMiddleware, async (req, res) => {
 });
 
 app.get("/:shortId", async (req, res) => {
-  try {
-    const { shortId } = req.params;
-    // Check both shortId and customAlias
-    const theurl = await Url.findOne({
-      $or: [{ shortId }, { customAlias: shortId }],
-      isDeleted: false  // Only active URLs can be accessed
-    });
+    try {
+        const { shortId } = req.params;
+        const { Op } = require('sequelize');
 
-    if (theurl) {
-      // Increase click count
-      theurl.clicks += 1;
+        // Check both shortId and customAlias
+        const theurl = await Url.findOne({
+            where: {
+                [Op.or]: [
+                    { shortId },
+                    { customAlias: shortId }
+                ],
+                isDeleted: false  // Only active URLs can be accessed
+            }
+        });
 
-      // Add to click history (keep multiple entries)
-      theurl.clickHistory.push({
-        timestamp: new Date(),
-        userAgent: req.headers["user-agent"] || "Unknown",
-        ipAddress:
-          req.ip ||
-          req.headers["x-forwarded-for"] ||
-          req.connection.remoteAddress ||
-          "Unknown",
-      });
+        if (theurl) {
+            // Increase click count
+            theurl.clicks += 1;
 
-      // Save updates
-      await theurl.save();
+            // Add to click history (keep multiple entries)
+            const clickHistory = theurl.clickHistory || [];
+            clickHistory.push({
+                timestamp: new Date(),
+                userAgent: req.headers["user-agent"] || "Unknown",
+                ipAddress:
+                    req.ip ||
+                    req.headers["x-forwarded-for"] ||
+                    req.connection.remoteAddress ||
+                    "Unknown",
+            });
+            theurl.clickHistory = clickHistory;
 
-      // Redirect to original URL
-      return res.redirect(theurl.originalUrl);
-    } else {
-      return res.status(404).send("URL not found or has been deleted");
+            // Save updates
+            await theurl.save();
+
+            // Redirect to original URL
+            return res.redirect(theurl.originalUrl);
+        } else {
+            return res.status(404).send("URL not found or has been deleted");
+        }
+    } catch (err) {
+        console.error("Error during redirection:", err);
+        return res.status(500).send("Server error");
     }
-  } catch (err) {
-    console.error("Error during redirection:", err);
-    return res.status(500).send("Server error");
-  }
 });
 
 const PORT = process.env.PORT || 3000;
-// Start server after attempting to connect to MongoDB so logs are clearer.
 
-function startServer() {
-    app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
-}
-
-if (!mongodburl) {
-    console.warn("No MongoDB connection string provided in environment variables");
-    startServer();
-} else {
-    mongoose
-        .connect(mongodburl)
-        .then(() => {
-            console.log("MongoDB Connected");
-            startServer();
-        })
-        .catch((err) => {
-            console.error("MongoDB connection error:", err);
-            console.warn("Proceeding to start server on port", PORT, "but DB features may not work until a valid MongoDB URL is provided.");
-            startServer();
+async function startServer() {
+    try {
+        // Sync database and create tables if they don't exist
+        await sequelize.sync({ alter: false });
+        console.log("✓ Database synchronized successfully");
+        
+        app.listen(PORT, () => {
+            console.log(`✓ Server is running on port ${PORT}`);
+            console.log(`✓ PostgreSQL database connected: ${process.env.DB_NAME}`);
         });
+    } catch (err) {
+        console.error("✗ Database connection error:", err);
+        console.error("Make sure PostgreSQL is running and the database exists.");
+        process.exit(1);
+    }
 }
+
+startServer();
