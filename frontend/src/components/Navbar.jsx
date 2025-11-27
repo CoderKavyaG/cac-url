@@ -5,6 +5,7 @@ import SignUpModal from "./SignUpModal";
 
 export default function Navbar({ setCurrentPage, onShowAuthModal }) {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isLoginMode, setIsLoginMode] = useState(false);
   const { user, logout } = useAuth();
 
   const handleLogout = () => {
@@ -39,7 +40,10 @@ export default function Navbar({ setCurrentPage, onShowAuthModal }) {
               </div>
             ) : (
               <button
-                onClick={() => setShowAuthModal(true)}
+                onClick={() => {
+                  setIsLoginMode(true);
+                  setShowAuthModal(true);
+                }}
                 className="text-gray-300 hover:text-white transition text-sm font-semibold"
               >
                 Sign In
@@ -51,7 +55,7 @@ export default function Navbar({ setCurrentPage, onShowAuthModal }) {
 
       {/* Auth Modal - Unified Sign Up / Sign In */}
       {showAuthModal && (
-        <SignUpModal onClose={() => setShowAuthModal(false)} />
+        <SignUpModal onClose={() => setShowAuthModal(false)} isLogin={isLoginMode} />
       )}
     </>
   );

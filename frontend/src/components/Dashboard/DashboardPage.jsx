@@ -11,10 +11,6 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [copied, setCopied] = useState(null);
-  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'custom'
-  const [customAlias, setCustomAlias] = useState('');
-  const [customAliasError, setCustomAliasError] = useState('');
-  const [customAliasLoading, setCustomAliasLoading] = useState(false);
 
   // If not logged in, show locked message
   if (!user) {
@@ -75,48 +71,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
     }
   };
 
-  const isValidAlias = (alias) => {
-    return /^[a-zA-Z0-9_-]+$/.test(alias) && alias.length >= 3 && alias.length <= 30;
-  };
 
-  const handleCreateCustomAlias = async (shortId, originalUrl) => {
-    if (!customAlias) {
-      setCustomAliasError('Please enter a custom alias');
-      return;
-    }
-
-    if (!isValidAlias(customAlias)) {
-      setCustomAliasError('Alias must be 3-30 characters (alphanumeric, hyphens, underscores only)');
-      return;
-    }
-
-    setCustomAliasLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/urls/${shortId}/alias`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ customAlias }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create alias");
-      }
-
-      // Refresh URLs to get updated data
-      await fetchUrls();
-      setCustomAlias('');
-      setCustomAliasError('✓ Custom alias created!');
-      setTimeout(() => setCustomAliasError(''), 2000);
-    } catch (err) {
-      setCustomAliasError(err.message || 'Error creating custom alias');
-    } finally {
-      setCustomAliasLoading(false);
-    }
-  };
 
   const handleCopy = (url) => {
     const urlToCopy = url.customAlias 
@@ -154,11 +109,6 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  // Filter URLs based on active tab
-  const displayedUrls = activeTab === 'custom' 
-    ? urls.filter(url => url.customAlias)
-    : urls;
-
   return (
     <div className="w-full">
       {/* Header */}
@@ -190,63 +140,12 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-gray-500/20">
-        <button
-          onClick={() => setActiveTab('all')}
-          className={`px-4 py-3 font-medium transition border-b-2 ${
-            activeTab === 'all'
-              ? 'text-white border-b-white'
-              : 'text-gray-400 hover:text-gray-300 border-b-transparent'
-          }`}
-        >
-          All Links ({urls.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('custom')}
-          className={`px-4 py-3 font-medium transition border-b-2 ${
-            activeTab === 'custom'
-              ? 'text-white border-b-white'
-              : 'text-gray-400 hover:text-gray-300 border-b-transparent'
-          }`}
-        >
-          Custom Aliases ({urls.filter(u => u.customAlias).length})
-        </button>
-      </div>
 
-      {/* Custom Alias Creation Form - Only in Custom Tab */}
-      {activeTab === 'custom' && (
-        <div className="bg-slate-900/40 border border-gray-500/20 rounded-2xl p-6 mb-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Create Custom Short URL</h2>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 px-4 py-3 bg-black/30 rounded-lg border border-gray-500/20">
-              <span className="text-gray-400 font-mono text-sm">{API_URL}/</span>
-              <input
-                type="text"
-                value={customAlias}
-                onChange={(e) => {
-                  setCustomAlias(e.target.value.toLowerCase());
-                  setCustomAliasError('');
-                }}
-                placeholder="my-awesome-link (3-30 chars)"
-                className="flex-1 bg-transparent text-gray-100 placeholder-gray-500 focus:outline-none text-sm"
-                disabled={customAliasLoading}
-              />
-            </div>
-            <p className="text-xs text-gray-500">Use alphanumeric characters, hyphens, and underscores only</p>
-            {customAliasError && (
-              <p className={`text-xs ${customAliasError.includes('✓') ? 'text-green-400' : 'text-red-400'}`}>
-                {customAliasError}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
 
-      {displayedUrls.length === 0 ? (
+      {urls.length === 0 ? (
         <div className="bg-slate-900/40 border border-gray-500/20 rounded-2xl p-16 text-center">
           <p className="text-gray-400 mb-6 text-lg">
-            {activeTab === 'custom' ? 'No custom aliases yet' : 'No shortened links yet'}
+            No shortened links yet
           </p>
           <button
             onClick={() => setCurrentPage('home')}
@@ -256,12 +155,14 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Link Cards */}
-          {displayedUrls.map((url) => (
+        <div className="ml-32 border-2 border-dotted border-gray-500/50 rounded-2xl p-8 min-h-screen">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-max">
+            {/* Link Cards */}
+            {urls.map((url) => {
+            return (
             <div
               key={url.shortId}
-              className="bg-gradient-to-br from-slate-800/80 to-slate-900/60 border border-gray-500/30 rounded-2xl p-6 hover:border-gray-500/60 transition-all hover:shadow-2xl hover:shadow-black/40 hover:scale-[1.02] flex flex-col h-full"
+              className="bg-gradient-to-br from-slate-800/80 to-slate-900/60 border border-gray-500/30 rounded-2xl p-6 hover:border-gray-500/60 transition-all hover:shadow-2xl hover:shadow-black/40 hover:scale-[1.02] flex flex-col"
             >
               {/* Header */}
               <div className="mb-4">
@@ -283,48 +184,12 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
               <div className="border-t border-gray-500/20 my-3"></div>
 
               {/* Original URL */}
-              <div className="mb-4 flex-grow">
+              <div className="mb-4 flex-1">
                 <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Original Link</p>
                 <p className="text-sm text-gray-300 break-all line-clamp-2" title={url.originalUrl}>
                   {url.originalUrl}
                 </p>
               </div>
-
-              {/* Custom Alias Badge */}
-              {url.customAlias && (
-                <div className="bg-blue-950/30 border border-blue-500/30 rounded-lg p-3 mb-4">
-                  <p className="text-xs text-blue-400 uppercase tracking-wider font-semibold mb-1">Custom Alias</p>
-                  <p className="text-sm font-mono text-blue-300">{url.customAlias}</p>
-                  <p className="text-xs text-gray-600 font-mono mt-2">Backup ID: {url.shortId}</p>
-                </div>
-              )}
-
-              {/* Custom Alias Creation Form - Only show for non-custom URLs when in custom tab */}
-              {!url.customAlias && activeTab === 'custom' && (
-                <div className="bg-purple-950/20 border border-purple-500/20 rounded-lg p-3 mb-4">
-                  <p className="text-xs text-purple-400 uppercase tracking-wider font-semibold mb-2">Add Custom Alias</p>
-                  <div className="flex gap-2">
-                    <div className="flex-1 flex items-center gap-1">
-                      <span className="text-xs text-gray-500">{API_URL}/</span>
-                      <input
-                        type="text"
-                        value={customAlias}
-                        onChange={(e) => setCustomAlias(e.target.value.toLowerCase())}
-                        placeholder="alias"
-                        className="flex-1 bg-black/30 text-gray-100 placeholder-gray-600 rounded text-xs px-2 py-1 border border-gray-500/20 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                        disabled={customAliasLoading}
-                      />
-                    </div>
-                    <button
-                      onClick={() => handleCreateCustomAlias(url.shortId, url.originalUrl)}
-                      disabled={customAliasLoading}
-                      className="bg-purple-950/40 hover:bg-purple-950/60 disabled:opacity-50 text-purple-300 px-2 py-1 rounded text-xs font-medium transition"
-                    >
-                      {customAliasLoading ? '...' : 'Add'}
-                    </button>
-                  </div>
-                </div>
-              )}
 
               {/* Meta Info */}
               <div className="text-xs text-gray-600 mb-4">
@@ -363,8 +228,9 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
                   Delete
                 </button>
               </div>
-            </div>
-          ))}
+            );
+            })}
+          </div>
         </div>
       )}
     </div>
