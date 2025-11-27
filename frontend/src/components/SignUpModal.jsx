@@ -1,30 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
-export default function SignUpModal({ onClose }) {
+export default function SignUpModal({ onClose, isLogin = false }) {
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [otpTimer, setOtpTimer] = useState(0);
-  const { sendOtp, verifyOtp, otpSent, pendingEmail } = useAuth();
+  const [isLoginMode, setIsLoginMode] = useState(isLogin);
+  const { login, register } = useAuth();
 
-  // OTP Timer countdown
-  useEffect(() => {
-    let interval;
-    if (otpTimer > 0) {
-      interval = setInterval(() => {
-        setOtpTimer(prev => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [otpTimer]);
-
-  const handleSendOtp = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!email) {
-      setError("Email is required");
+    if (!email || !password) {
+      setError("Email and password are required");
       return;
     }
 
@@ -35,59 +25,37 @@ export default function SignUpModal({ onClose }) {
       return;
     }
 
-    setLoading(true);
-    setError("");
-    
-    const result = await sendOtp(email);
-    setLoading(false);
+    if (!isLoginMode) {
+      if (password !== confirmPassword) {
+        setError("Passwords do not match");
+        return;
+      }
 
-    if (result.success) {
-      setOtpTimer(300); // 5 minutes timer
-    } else {
-      setError(result.error || "Failed to send OTP");
-    }
-  };
-
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-
-    if (!otp || otp.length !== 6) {
-      setError("Please enter a valid 6-digit OTP");
-      return;
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters");
+        return;
+      }
     }
 
     setLoading(true);
     setError("");
 
-    const result = await verifyOtp(email, otp);
+    const result = isLoginMode 
+      ? await login(email, password)
+      : await register(email, password, confirmPassword);
+
     setLoading(false);
 
     if (result.success) {
       setEmail("");
-      setOtp("");
+      setPassword("");
+      setConfirmPassword("");
       // Small delay to ensure state is updated before closing
       setTimeout(() => {
         onClose();
       }, 300);
     } else {
-      setError(result.error || "OTP verification failed");
-      setOtp("");
-    }
-  };
-
-  const handleResendOtp = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    
-    const result = await sendOtp(email);
-    setLoading(false);
-
-    if (result.success) {
-      setOtp("");
-      setOtpTimer(300); // Reset timer to 5 minutes
-    } else {
-      setError(result.error || "Failed to resend OTP");
+      setError(result.error || (isLoginMode ? "Login failed" : "Registration failed"));
     }
   };
 
@@ -102,10 +70,12 @@ export default function SignUpModal({ onClose }) {
         </button>
 
         <h2 className="text-white text-2xl font-bold mb-2">
-          {otpSent ? "Verify Email" : "Sign In / Create Account"}
+          {isLoginMode ? "Login" : "Create Account"}
         </h2>
         <p className="text-gray-400 text-sm mb-6">
-          {otpSent ? "Enter the OTP sent to your email" : "We'll send you a one-time code to verify your email"}
+          {isLoginMode 
+            ? "Enter your email and password to login" 
+            : "Create a new account with your email and password"}
         </p>
 
         {error && (
@@ -114,83 +84,62 @@ export default function SignUpModal({ onClose }) {
           </div>
         )}
 
-        {!otpSent ? (
-          // Step 1: Email Entry
-          <form onSubmit={handleSendOtp}>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={loading}
+            className="w-full bg-slate-800/40 border border-gray-500/20 text-white placeholder-gray-500 px-4 py-2 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-gray-400/50 transition disabled:opacity-50"
+          />
+
+          <input
+            type="password"
+            placeholder="Enter password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+            className="w-full bg-slate-800/40 border border-gray-500/20 text-white placeholder-gray-500 px-4 py-2 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-gray-400/50 transition disabled:opacity-50"
+          />
+
+          {!isLoginMode && (
             <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="password"
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               disabled={loading}
               className="w-full bg-slate-800/40 border border-gray-500/20 text-white placeholder-gray-500 px-4 py-2 rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-gray-400/50 transition disabled:opacity-50"
             />
+          )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white font-semibold py-2 rounded-lg transition border border-gray-500/20"
-            >
-              {loading ? "Sending OTP..." : "Send OTP"}
-            </button>
-          </form>
-        ) : (
-          // Step 2: OTP Verification
-          <form onSubmit={handleVerifyOtp}>
-            <div className="bg-slate-800/20 border border-gray-500/20 rounded-lg p-3 mb-4">
-              <p className="text-gray-300 text-sm">Email: <span className="font-semibold">{email}</span></p>
-            </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white font-semibold py-2 rounded-lg transition border border-gray-500/20 mb-3"
+          >
+            {loading 
+              ? (isLoginMode ? "Logging in..." : "Creating account...") 
+              : (isLoginMode ? "Login" : "Create Account")}
+          </button>
 
-            <input
-              type="text"
-              placeholder="Enter 6-digit OTP"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              maxLength="6"
-              disabled={loading}
-              className="w-full bg-slate-800/40 border border-gray-500/20 text-white placeholder-gray-500 px-4 py-2 rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-gray-400/50 transition disabled:opacity-50 text-center text-lg tracking-widest"
-            />
-
-            <div className="text-gray-400 text-xs mb-6 text-center">
-              {otpTimer > 0 ? (
-                <span>
-                  OTP expires in {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, '0')}
-                </span>
-              ) : (
-                <span className="text-red-400">OTP expired</span>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || otp.length !== 6}
-              className="w-full bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white font-semibold py-2 rounded-lg transition border border-gray-500/20 mb-3"
-            >
-              {loading ? "Verifying..." : "Verify OTP"}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleResendOtp}
-              disabled={loading || otpTimer > 0}
-              className="w-full bg-transparent hover:bg-slate-700/30 disabled:opacity-50 text-gray-300 hover:text-white font-semibold py-2 rounded-lg transition border border-gray-500/20"
-            >
-              Resend OTP {otpTimer > 0 && `(${Math.floor(otpTimer / 60)}:${(otpTimer % 60).toString().padStart(2, '0')})`}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setEmail("");
-                setOtp("");
-                setError("");
-              }}
-              className="w-full text-gray-400 hover:text-gray-300 text-sm py-2 mt-2"
-            >
-              Use different email
-            </button>
-          </form>
-        )}
+          <button
+            type="button"
+            onClick={() => {
+              setIsLoginMode(!isLoginMode);
+              setError("");
+              setEmail("");
+              setPassword("");
+              setConfirmPassword("");
+            }}
+            className="w-full text-gray-400 hover:text-gray-300 text-sm py-2"
+          >
+            {isLoginMode 
+              ? "Don't have an account? Sign up" 
+              : "Already have an account? Login"}
+          </button>
+        </form>
       </div>
     </div>
   );

@@ -2,26 +2,29 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const Otp = require("../models/Otp");
-const { sendOtpEmail } = require("../services/emailService");
 
-const JWT_SECRET = process.env.JWT_SECRET;
-const OTP_EXPIRY = parseInt(process.env.OTP_EXPIRY) || 600; // 10 minutes
-const MAX_OTP_ATTEMPTS = parseInt(process.env.MAX_OTP_ATTEMPTS) || 5;
+const JWT_SECRET = process.env.JWT_SECRET || "Kavyasecretkey12323";
 
-// Generate random OTP
-const generateOtp = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-};
-
-// Send OTP endpoint
-router.post("/send-otp", async (req, res) => {
+// Register endpoint
+router.post("/register", async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, password, confirmPassword } = req.body;
 
-    if (!email) {
+    if (!email || !password) {
       return res.status(400).json({
-        error: "Email is required",
+        error: "Email and password are required",
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        error: "Passwords do not match",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        error: "Password must be at least 6 characters",
       });
     }
 
@@ -33,141 +36,24 @@ router.post("/send-otp", async (req, res) => {
       });
     }
 
-    // Clean up expired OTPs for this email
-    await Otp.destroy({
+    // Check if user already exists
+    const existingUser = await User.findOne({
       where: {
         email: email.toLowerCase(),
       },
     });
 
-    // Generate new OTP
-    const otp = generateOtp();
-    const expiresAt = new Date(Date.now() + OTP_EXPIRY * 1000);
+    if (existingUser) {
+      return res.status(400).json({
+        error: "Email already registered",
+      });
+    }
 
-    // Save OTP to database
-    await Otp.create({
+    // Create new user
+    const user = await User.create({
       email: email.toLowerCase(),
-      otp,
-      expiresAt,
-      attempts: 0,
-      verified: false,
+      password: password,
     });
-
-    // Send OTP via email
-    const emailSent = await sendOtpEmail(email, otp);
-
-    if (!emailSent) {
-      await Otp.destroy({
-        where: {
-          email: email.toLowerCase(),
-        },
-      });
-
-      return res.status(500).json({
-        error: "Failed to send OTP. Please try again.",
-      });
-    }
-
-    res.json({
-      message: "OTP sent to your email",
-      email: email.toLowerCase(),
-    });
-  } catch (err) {
-    console.error("Error in send-otp:", err);
-    res.status(500).json({
-      error: "Server error",
-    });
-  }
-});
-
-// Verify OTP endpoint
-router.post("/verify-otp", async (req, res) => {
-  try {
-    const { email, otp } = req.body;
-
-    if (!email || !otp) {
-      return res.status(400).json({
-        error: "Email and OTP are required",
-      });
-    }
-
-    // Find OTP record
-    const otpRecord = await Otp.findOne({
-      where: {
-        email: email.toLowerCase(),
-      },
-    });
-
-    if (!otpRecord) {
-      return res.status(400).json({
-        error: "OTP not found. Please request a new OTP.",
-      });
-    }
-
-    // Check if OTP is expired
-    if (new Date() > otpRecord.expiresAt) {
-      await Otp.destroy({
-        where: {
-          email: email.toLowerCase(),
-        },
-      });
-
-      return res.status(400).json({
-        error: "OTP expired. Please request a new OTP.",
-      });
-    }
-
-    // Check max attempts
-    if (otpRecord.attempts >= MAX_OTP_ATTEMPTS) {
-      await Otp.destroy({
-        where: {
-          email: email.toLowerCase(),
-        },
-      });
-
-      return res.status(400).json({
-        error: "Maximum OTP attempts exceeded. Please request a new OTP.",
-      });
-    }
-
-    // Verify OTP
-    if (otpRecord.otp !== otp) {
-      await Otp.increment("attempts", {
-        where: {
-          email: email.toLowerCase(),
-        },
-      });
-
-      const remainingAttempts = MAX_OTP_ATTEMPTS - (otpRecord.attempts + 1);
-
-      return res.status(400).json({
-        error: "Invalid OTP",
-        remainingAttempts,
-      });
-    }
-
-    // OTP verified, find or create user
-    let user = await User.findOne({
-      where: {
-        email: email.toLowerCase(),
-      },
-    });
-
-    if (!user) {
-      user = await User.create({
-        email: email.toLowerCase(),
-      });
-    }
-
-    // Mark OTP as verified
-    await Otp.update(
-      { verified: true },
-      {
-        where: {
-          email: email.toLowerCase(),
-        },
-      }
-    );
 
     // Generate JWT token
     const token = jwt.sign(
@@ -182,24 +68,84 @@ router.post("/verify-otp", async (req, res) => {
     );
 
     res.json({
-      message: "OTP verified successfully",
+      message: "Registration successful",
       token,
       user: {
         id: user.id,
         email: user.email,
       },
     });
-
-    // Clean up OTP after verification
-    setTimeout(async () => {
-      await Otp.destroy({
-        where: {
-          email: email.toLowerCase(),
-        },
-      });
-    }, 5000);
   } catch (err) {
-    console.error("Error in verify-otp:", err);
+    console.error("Error in register:", err);
+    res.status(500).json({
+      error: "Server error",
+    });
+  }
+});
+
+// Login endpoint
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        error: "Email and password are required",
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        error: "Invalid email format",
+      });
+    }
+
+    // Find user
+    const user = await User.findOne({
+      where: {
+        email: email.toLowerCase(),
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        error: "Invalid email or password",
+      });
+    }
+
+    // Compare password
+    const passwordMatch = await user.comparePassword(password);
+
+    if (!passwordMatch) {
+      return res.status(400).json({
+        error: "Invalid email or password",
+      });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+      },
+      JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
+
+    res.json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+      },
+    });
+  } catch (err) {
+    console.error("Error in login:", err);
     res.status(500).json({
       error: "Server error",
     });

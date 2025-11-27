@@ -1,5 +1,6 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
+const bcrypt = require("bcrypt");
 
 const User = sequelize.define("User", {
     id: {
@@ -17,6 +18,10 @@ const User = sequelize.define("User", {
             isEmail: true,
         },
     },
+    password: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
     createdAt: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
@@ -29,5 +34,21 @@ const User = sequelize.define("User", {
     timestamps: true,
     tableName: "users",
 });
+
+// Hash password before saving
+User.beforeCreate(async (user) => {
+    user.password = await bcrypt.hash(user.password, 10);
+});
+
+User.beforeUpdate(async (user) => {
+    if (user.changed('password')) {
+        user.password = await bcrypt.hash(user.password, 10);
+    }
+});
+
+// Add method to compare passwords
+User.prototype.comparePassword = async function(password) {
+    return await bcrypt.compare(password, this.password);
+};
 
 module.exports = User;
