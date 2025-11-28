@@ -11,6 +11,9 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [copied, setCopied] = useState(null);
+  const [aliasInput, setAliasInput] = useState({});
+  const [creatingAlias, setCreatingAlias] = useState({});
+  const [sortBy, setSortBy] = useState('latest'); // latest, oldest, mostClicks, leastClicks
 
   // If not logged in, show locked message
   if (!user) {
@@ -104,9 +107,85 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
     }
   };
 
+  const handleCreateAlias = async (shortId) => {
+    const alias = aliasInput[shortId];
+    
+    if (!alias) {
+      setError("Please enter a custom alias");
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_-]+$/.test(alias)) {
+      setError("Alias can only contain letters, numbers, hyphens, and underscores");
+      return;
+    }
+
+    if (alias.length < 3) {
+      setError("Alias must be at least 3 characters");
+      return;
+    }
+
+    setCreatingAlias(prev => ({ ...prev, [shortId]: true }));
+    setError("");
+
+    try {
+      const response = await fetch(`${API_URL}/urls/${shortId}/alias`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ customAlias: alias }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create alias");
+      }
+
+      // Update the URL with the new alias
+      setUrls(urls.map(url => 
+        url.shortId === shortId 
+          ? { ...url, customAlias: alias }
+          : url
+      ));
+
+      setSuccess("✓ Custom alias created successfully!");
+      setAliasInput(prev => ({ ...prev, [shortId]: "" }));
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setError(err.message || "Failed to create alias");
+    } finally {
+      setCreatingAlias(prev => ({ ...prev, [shortId]: false }));
+    }
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const getSortedUrls = () => {
+    let sorted = [...urls];
+    
+    switch (sortBy) {
+      case 'oldest':
+        sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        break;
+      case 'latest':
+        sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        break;
+      case 'mostClicks':
+        sorted.sort((a, b) => (b.clicks || 0) - (a.clicks || 0));
+        break;
+      case 'leastClicks':
+        sorted.sort((a, b) => (a.clicks || 0) - (b.clicks || 0));
+        break;
+      default:
+        break;
+    }
+    
+    return sorted;
   };
 
   return (
@@ -127,6 +206,53 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
           {loading ? 'Loading...' : 'Refresh'}
         </button>
       </div>
+
+      {/* Sort Controls */}
+      {urls.length > 0 && (
+        <div className="mb-6 flex gap-2">
+          <span className="text-gray-400 text-sm font-semibold py-2">Sort by:</span>
+          <button
+            onClick={() => setSortBy('latest')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              sortBy === 'latest'
+                ? 'bg-white/20 text-white border border-white/30'
+                : 'bg-white/10 text-gray-300 hover:bg-white/15 border border-gray-500/20'
+            }`}
+          >
+            Latest
+          </button>
+          <button
+            onClick={() => setSortBy('oldest')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              sortBy === 'oldest'
+                ? 'bg-white/20 text-white border border-white/30'
+                : 'bg-white/10 text-gray-300 hover:bg-white/15 border border-gray-500/20'
+            }`}
+          >
+            Oldest
+          </button>
+          <button
+            onClick={() => setSortBy('mostClicks')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              sortBy === 'mostClicks'
+                ? 'bg-white/20 text-white border border-white/30'
+                : 'bg-white/10 text-gray-300 hover:bg-white/15 border border-gray-500/20'
+            }`}
+          >
+            Most Clicks
+          </button>
+          <button
+            onClick={() => setSortBy('leastClicks')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              sortBy === 'leastClicks'
+                ? 'bg-white/20 text-white border border-white/30'
+                : 'bg-white/10 text-gray-300 hover:bg-white/15 border border-gray-500/20'
+            }`}
+          >
+            Least Clicks
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-950/30 border border-red-700/50 rounded-lg p-4 mb-6 text-red-400 text-sm">
@@ -158,78 +284,77 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
         <div className="ml-32 border-2 border-dotted border-gray-500/50 rounded-2xl p-8 min-h-screen">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-max">
             {/* Link Cards */}
-            {urls.map((url) => {
-            return (
-            <div
-              key={url.shortId}
-              className="bg-gradient-to-br from-slate-800/80 to-slate-900/60 border border-gray-500/30 rounded-2xl p-6 hover:border-gray-500/60 transition-all hover:shadow-2xl hover:shadow-black/40 hover:scale-[1.02] flex flex-col"
-            >
-              {/* Header */}
-              <div className="mb-4">
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Short URL</p>
-                    <p className="text-lg font-mono font-bold text-white truncate" title={`localhost:3000/${url.customAlias || url.shortId}`}>
-                      {url.customAlias || url.shortId}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Clicks</p>
-                    <p className="text-3xl font-bold text-white">{url.clicks || 0}</p>
+            {getSortedUrls().map((url) => (
+              <div
+                key={url.shortId}
+                className="bg-gradient-to-br from-slate-800/80 to-slate-900/60 border border-gray-500/30 rounded-2xl p-6 hover:border-gray-500/60 transition-all hover:shadow-2xl hover:shadow-black/40 hover:scale-[1.02] flex flex-col"
+              >
+                {/* Header */}
+                <div className="mb-4">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Short URL</p>
+                      <p className="text-lg font-mono font-bold text-white truncate" title={`localhost:3000/${url.customAlias || url.shortId}`}>
+                        {url.customAlias || url.shortId}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Clicks</p>
+                      <p className="text-3xl font-bold text-white">{url.clicks || 0}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Divider */}
-              <div className="border-t border-gray-500/20 my-3"></div>
+                {/* Divider */}
+                <div className="border-t border-gray-500/20 my-3"></div>
 
-              {/* Original URL */}
-              <div className="mb-4 flex-1">
-                <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Original Link</p>
-                <p className="text-sm text-gray-300 break-all line-clamp-2" title={url.originalUrl}>
-                  {url.originalUrl}
-                </p>
-              </div>
+                {/* Original URL */}
+                <div className="mb-4 flex-1">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Original Link</p>
+                  <p className="text-sm text-gray-300 break-all line-clamp-2" title={url.originalUrl}>
+                    {url.originalUrl}
+                  </p>
+                </div>
 
-              {/* Meta Info */}
-              <div className="text-xs text-gray-600 mb-4">
-                Created: {formatDate(url.createdAt)}
-              </div>
+                {/* Meta Info */}
+                <div className="text-xs text-gray-600 mb-4">
+                  Created: {formatDate(url.createdAt)}
+                </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-2 mt-auto">
-                <button
-                  onClick={() => handleCopy(url)}
-                  className={`flex-1 px-3 py-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 ${
-                    copied === url.shortId
-                      ? 'bg-green-600/40 text-green-300 border border-green-500/40'
-                      : 'bg-white/10 hover:bg-white/20 text-white border border-gray-500/20'
-                  }`}
-                  title="Copy link"
-                >
-                  <FiCopy size={16} />
-                  Copy
-                </button>
-                <button
-                  onClick={() => onViewLink(url)}
-                  className="flex-1 px-3 py-3 rounded-lg text-sm font-medium text-white bg-white/10 hover:bg-white/20 transition flex items-center justify-center gap-2 border border-gray-500/20"
-                  title="View analytics"
-                >
-                  <FiEye size={16} />
-                  Stats
-                </button>
-                <button
-                  onClick={() => handleDelete(url.shortId)}
-                  disabled={loading}
-                  className="flex-1 px-3 py-3 rounded-lg text-sm font-medium text-red-400 bg-red-950/20 hover:bg-red-950/40 disabled:opacity-50 transition flex items-center justify-center gap-2 border border-red-500/20 hover:border-red-500/40"
-                  title="Delete link"
-                >
-                  <FiTrash2 size={16} />
-                  Delete
-                </button>
+                {/* Action Buttons */}
+                <div className="flex gap-2 mt-auto">
+                  <button
+                    onClick={() => handleCopy(url)}
+                    className={`flex-1 px-3 py-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 ${
+                      copied === url.shortId
+                        ? 'bg-green-600/40 text-green-300 border border-green-500/40'
+                        : 'bg-white/10 hover:bg-white/20 text-white border border-gray-500/20'
+                    }`}
+                    title="Copy link"
+                  >
+                    <FiCopy size={16} />
+                    Copy
+                  </button>
+                  <button
+                    onClick={() => onViewLink(url)}
+                    className="flex-1 px-3 py-3 rounded-lg text-sm font-medium text-white bg-white/10 hover:bg-white/20 transition flex items-center justify-center gap-2 border border-gray-500/20"
+                    title="View analytics"
+                  >
+                    <FiEye size={16} />
+                    Stats
+                  </button>
+                  <button
+                    onClick={() => handleDelete(url.shortId)}
+                    disabled={loading}
+                    className="flex-1 px-3 py-3 rounded-lg text-sm font-medium text-red-400 bg-red-950/20 hover:bg-red-950/40 disabled:opacity-50 transition flex items-center justify-center gap-2 border border-red-500/20 hover:border-red-500/40"
+                    title="Delete link"
+                  >
+                    <FiTrash2 size={16} />
+                    Delete
+                  </button>
+                </div>
               </div>
-            );
-            })}
+            ))}
           </div>
         </div>
       )}

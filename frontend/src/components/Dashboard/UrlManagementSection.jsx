@@ -46,8 +46,13 @@ export default function UrlManagementSection({
               key={url.shortId}
               className="bg-slate-950 border border-purple-700/30 rounded-xl p-6 hover:border-purple-500 transition"
             >
-              <p className="text-purple-400 font-mono text-sm font-bold">{url.shortId}</p>
-              <p className="text-gray-500 text-xs mt-1 truncate" title={url.originalUrl}>
+              <div className="mb-3">
+                <p className="text-purple-400 font-mono text-sm font-bold">{url.shortId}</p>
+                {url.customAlias && (
+                  <p className="text-green-400 font-mono text-xs mt-1">Alias: {url.customAlias}</p>
+                )}
+              </div>
+              <p className="text-gray-500 text-xs truncate" title={url.originalUrl}>
                 {url.originalUrl}
               </p>
 
@@ -64,17 +69,17 @@ export default function UrlManagementSection({
 
               <div className="flex gap-2">
                 <button
-                  onClick={() => onCopy(url.shortId)}
+                  onClick={() => onCopy(url.customAlias || url.shortId)}
                   className={`
                     flex-1 py-2 px-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2
                     ${
-                      copied === url.shortId
+                      copied === (url.customAlias || url.shortId)
                         ? 'bg-green-600 text-white'
                         : 'bg-purple-600 hover:bg-purple-700 text-white'
                     }
                   `}
                 >
-                  <FiCopy size={16} /> {copied === url.shortId ? 'Copied!' : 'Copy'}
+                  <FiCopy size={16} /> {copied === (url.customAlias || url.shortId) ? 'Copied!' : 'Copy'}
                 </button>
                 <button
                   onClick={() => onDelete(url.shortId)}

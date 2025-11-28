@@ -19,7 +19,7 @@ app.use("/auth", authRoutes);
 
 app.post("/shorten", async (req, res) => {
     try {
-        const { originalUrl } = req.body; 
+        const { originalUrl, customAlias } = req.body; 
 
         if (!originalUrl || typeof originalUrl !== "string" || !originalUrl.startsWith("http")) {
             return res.status(400).json({ error: 'Invalid url' });
@@ -38,15 +38,48 @@ app.post("/shorten", async (req, res) => {
             }
         }
 
+        // Validate custom alias if provided
+        let aliasToUse = null;
+        if (customAlias) {
+            if (typeof customAlias !== "string" || customAlias.length === 0) {
+                return res.status(400).json({ error: "Invalid custom alias format" });
+            }
+
+            if (!/^[a-zA-Z0-9_-]+$/.test(customAlias)) {
+                return res.status(400).json({ error: "Alias can only contain letters, numbers, hyphens, and underscores" });
+            }
+
+            // Check if alias already exists
+            const existingAlias = await Url.findOne({
+                where: { customAlias }
+            });
+
+            if (existingAlias) {
+                return res.status(400).json({ error: "Custom alias already taken" });
+            }
+
+            aliasToUse = customAlias;
+        }
+
         const shortId = nanoid(6);
         const newUrl = await Url.create({
             originalUrl,
             shortId,
+            customAlias: aliasToUse,
             userId: userId || null
         });
 
-        const shortUrlFull = `${process.env.API_URL || 'http://localhost:3000'}/${shortId}`;
-        res.json({ shortUrl: shortUrlFull, userId: userId ? "logged-in" : "anonymous" });
+        // Return both shortId and customAlias if provided
+        const shortUrlFull = aliasToUse 
+            ? `${process.env.API_URL || 'http://localhost:3000'}/${aliasToUse}`
+            : `${process.env.API_URL || 'http://localhost:3000'}/${shortId}`;
+
+        res.json({ 
+            shortUrl: shortUrlFull, 
+            shortId: newUrl.shortId,
+            customAlias: aliasToUse,
+            userId: userId ? "logged-in" : "anonymous" 
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Server error" });
@@ -133,6 +166,10 @@ app.get("/urls", authMiddleware, async (req, res) => {
     try {
         const userId = req.user.userId;
 
+        // Get user info to extract username
+        const user = await User.findByPk(userId);
+        const userName = user.email.split("@")[0];
+
         // Get all URLs created by this user
         const urls = await Url.findAll({
             where: {
@@ -148,6 +185,8 @@ app.get("/urls", authMiddleware, async (req, res) => {
                 customAlias: url.customAlias || null,
                 originalUrl: url.originalUrl,
                 shortUrl: `${process.env.API_URL || 'http://localhost:3000'}/${url.shortId}`,
+                customShortUrl: url.customAlias ? `${process.env.API_URL || 'http://localhost:3000'}/${userName}/${url.customAlias}` : null,
+                userName: userName,
                 clicks: url.clicks,
                 createdAt: url.createdAt,
                 isDeleted: url.isDeleted,
@@ -269,19 +308,79 @@ app.put("/urls/:shortId/alias", authMiddleware, async (req, res) => {
         url.customAlias = customAlias;
         await url.save();
 
-        res.json({ success: true, customAlias: customAlias });
+        // Get user email to extract username
+        const user = await require("./models/User").findByPk(userId);
+        const userName = user.email.split("@")[0];
+        const fullCustomUrl = `${process.env.API_URL || 'http://localhost:3000'}/${userName}/${customAlias}`;
+
+        res.json({ success: true, customAlias: customAlias, fullCustomUrl: fullCustomUrl, userName: userName });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Server error" });
     }
 });
 
+// Handle both /shortId and /userName/customAlias formats
+// Route 1: /userName/customAlias (personalized custom URL)
+app.get("/:userName/:customAlias", async (req, res) => {
+    try {
+        const { userName, customAlias } = req.params;
+        const { Op } = require('sequelize');
+
+        // Format: /userName/customAlias
+        const user = await User.findOne({
+            where: { email: { [Op.like]: `${userName}@%` } }
+        });
+
+        let theurl = null;
+        if (user) {
+            theurl = await Url.findOne({
+                where: {
+                    customAlias: customAlias,
+                    userId: user.id,
+                    isDeleted: false
+                }
+            });
+        }
+
+        if (theurl) {
+            // Increase click count
+            theurl.clicks += 1;
+
+            // Add to click history (keep multiple entries)
+            const clickHistory = theurl.clickHistory || [];
+            clickHistory.push({
+                timestamp: new Date(),
+                userAgent: req.headers["user-agent"] || "Unknown",
+                ipAddress:
+                    req.ip ||
+                    req.headers["x-forwarded-for"] ||
+                    req.connection.remoteAddress ||
+                    "Unknown",
+            });
+            theurl.clickHistory = clickHistory;
+
+            // Save updates
+            await theurl.save();
+
+            // Redirect to original URL
+            return res.redirect(theurl.originalUrl);
+        } else {
+            return res.status(404).send("URL not found or has been deleted");
+        }
+    } catch (err) {
+        console.error("Error during redirection:", err);
+        return res.status(500).send("Server error");
+    }
+});
+
+// Route 2: /shortId (anonymous or short ID redirect)
 app.get("/:shortId", async (req, res) => {
     try {
         const { shortId } = req.params;
         const { Op } = require('sequelize');
 
-        // Check both shortId and customAlias
+        // Check both shortId and customAlias (for non-personalized URLs)
         const theurl = await Url.findOne({
             where: {
                 [Op.or]: [

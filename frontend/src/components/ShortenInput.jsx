@@ -7,6 +7,7 @@ export default function ShortenInput() {
   const [url, setUrl] = useState("");
   const [shortUrl, setShortUrl] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const { token, user } = useAuth();
 
@@ -39,7 +40,9 @@ export default function ShortenInput() {
           "Content-Type": "application/json",
           ...(token && { "Authorization": `Bearer ${token}` }),
         },
-        body: JSON.stringify({ originalUrl: url }),
+        body: JSON.stringify({ 
+          originalUrl: url,
+        }),
       });
 
       if (!response.ok) {
@@ -49,6 +52,7 @@ export default function ShortenInput() {
 
       const data = await response.json();
       setShortUrl(data.shortUrl);
+      setSuccess("✓ Link shortened successfully!");
       setError("");
       setUrl("");
 
@@ -56,11 +60,10 @@ export default function ShortenInput() {
       if (!user) {
         const newAnonymousUrl = {
           originalUrl: url,
-          shortId: data.shortUrl.split("/").pop(),
+          shortId: data.shortId,
           shortUrl: data.shortUrl,
           clicks: 0,
           createdAt: new Date().toISOString(),
-          customAlias: null,
         };
 
         // Get existing anonymous URLs
@@ -95,7 +98,7 @@ export default function ShortenInput() {
   return (
     <div className="w-full max-w-4xl mx-auto mt-10">
       <div className="space-y-4">
-        {/* URL Input */}
+        {/* Main URL Input */}
         <div className="flex items-center gap-4">
           <input
             aria-label="Enter your link"
@@ -106,24 +109,25 @@ export default function ShortenInput() {
             onKeyPress={(e) => e.key === "Enter" && handleShorten()}
           />
 
-          {
-            <button
-              onClick={handleShorten}
-              disabled={loading}
-              className="bg-white text-gray-900 font-medium px-8 py-4 rounded-full shadow-md hover:scale-[.99] transition-transform disabled:opacity-50 whitespace-nowrap"
-            >
-              {loading ? "..." : "Shorten →"}
-            </button>
-          }
+          <button
+            onClick={handleShorten}
+            disabled={loading}
+            className="bg-white text-gray-900 font-medium px-8 py-4 rounded-full shadow-md hover:scale-[.99] transition-transform disabled:opacity-50 whitespace-nowrap"
+          >
+            {loading ? "..." : "Shorten →"}
+          </button>
         </div>
 
-
-
         {/* Error / Success Message */}
-        <div className="text-sm text-gray-300 min-h-[20px]">
+        <div className="text-sm min-h-[20px]">
           {error && (
-            <span className={error.includes("✓") ? "text-green-400" : "text-red-400"}>
-              {error}
+            <span className="text-red-400 flex items-center gap-2">
+              <span className="text-lg">⚠️</span> {error}
+            </span>
+          )}
+          {success && (
+            <span className="text-green-400 flex items-center gap-2">
+              <span className="text-lg">✓</span> {success}
             </span>
           )}
         </div>
