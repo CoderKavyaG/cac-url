@@ -349,6 +349,7 @@ app.get("/:userName/:customAlias", async (req, res) => {
 
             // Add to click history (keep multiple entries)
             const clickHistory = theurl.clickHistory || [];
+            const referrer = req.headers['referer'] || req.headers['referrer'] || 'Direct';
             clickHistory.push({
                 timestamp: new Date(),
                 userAgent: req.headers["user-agent"] || "Unknown",
@@ -357,6 +358,7 @@ app.get("/:userName/:customAlias", async (req, res) => {
                     req.headers["x-forwarded-for"] ||
                     req.connection.remoteAddress ||
                     "Unknown",
+                referrer: referrer,
             });
             theurl.clickHistory = clickHistory;
 
@@ -397,6 +399,7 @@ app.get("/:shortId", async (req, res) => {
 
             // Add to click history (keep multiple entries)
             const clickHistory = theurl.clickHistory || [];
+            const referrer = req.headers['referer'] || req.headers['referrer'] || 'Direct';
             clickHistory.push({
                 timestamp: new Date(),
                 userAgent: req.headers["user-agent"] || "Unknown",
@@ -405,6 +408,7 @@ app.get("/:shortId", async (req, res) => {
                     req.headers["x-forwarded-for"] ||
                     req.connection.remoteAddress ||
                     "Unknown",
+                referrer: referrer,
             });
             theurl.clickHistory = clickHistory;
 

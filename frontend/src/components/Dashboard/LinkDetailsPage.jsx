@@ -144,103 +144,11 @@ export default function LinkDetailsPage({ link, onBack }) {
         </div>
       </div>
 
-      {/* Analytics Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Click History Chart */}
-        <div className="lg:col-span-2 bg-slate-900/40 border border-gray-500/10 rounded-2xl p-8">
-          <h2 className="text-xl font-bold text-white mb-6">Clicks Over Time (Last 7 Days)</h2>
-
-          <div className="flex items-end gap-2 h-48">
-            {clickHistory.map((day, idx) => (
-              <div key={idx} className="flex-1 flex flex-col items-center gap-2">
-                <div
-                  className="w-full bg-gradient-to-t from-slate-600 to-slate-500 rounded-t-lg hover:from-slate-500 hover:to-slate-400 transition relative group"
-                  style={{ height: `${(day.clicks / maxClicks) * 100}%` }}
-                >
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap">
-                    {day.clicks}
-                  </div>
-                </div>
-                <p className="text-xs text-gray-400 text-center">{day.day}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Top Referrers */}
-        <div className="bg-slate-900/40 border border-gray-500/10 rounded-2xl p-8">
-          <h2 className="text-xl font-bold text-white mb-6">Top Referrers</h2>
-
-          <div className="space-y-3">
-            {referrers.length > 0 ? (
-              referrers.map((ref, idx) => {
-                const getReferrerIcon = (referrer) => {
-                  const lower = referrer.toLowerCase();
-                  if (lower.includes('google')) return <FaGoogle className="text-blue-400" />;
-                  if (lower.includes('twitter') || lower.includes('x.com')) return <FaTwitter className="text-blue-300" />;
-                  if (lower.includes('linkedin')) return <FaLinkedin className="text-blue-600" />;
-                  if (lower.includes('facebook')) return <FaFacebook className="text-blue-500" />;
-                  if (lower.includes('reddit')) return <FaReddit className="text-orange-600" />;
-                  if (lower.includes('github')) return <FaGithub className="text-gray-300" />;
-                  if (lower === 'direct') return <FaLink className="text-gray-400" />;
-                  return <FaLink className="text-gray-400" />;
-                };
-
-                return (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-slate-800/30 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl">
-                        {getReferrerIcon(ref.referrer)}
-                      </div>
-                      <p className="text-sm text-gray-300">{ref.referrer}</p>
-                    </div>
-                    <p className="text-sm font-bold text-white">{ref.clicks}</p>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="p-6 text-center text-gray-400">
-                <p className="text-sm">No referrer data available yet</p>
-              </div>
-            )}
-          </div>
-        </div>
+      {/* Analytics Charts */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold text-white mb-6">Detailed Analytics</h2>
+        {/* Will add click graph and referrers here */}
       </div>
-
-      {/* Full Width Referrers Table */}
-      {referrers.length > 5 && (
-        <div className="mt-8 bg-slate-900/40 border border-gray-500/10 rounded-2xl p-8">
-          <h2 className="text-xl font-bold text-white mb-6">All Referrers</h2>
-
-          <div className="space-y-2">
-            {referrers.slice(0, 10).map((ref, idx) => {
-              const getReferrerIcon = (referrer) => {
-                const lower = referrer.toLowerCase();
-                if (lower.includes('google')) return <FaGoogle className="text-blue-400" />;
-                if (lower.includes('twitter') || lower.includes('x.com')) return <FaTwitter className="text-blue-300" />;
-                if (lower.includes('linkedin')) return <FaLinkedin className="text-blue-600" />;
-                if (lower.includes('facebook')) return <FaFacebook className="text-blue-500" />;
-                if (lower.includes('reddit')) return <FaReddit className="text-orange-600" />;
-                if (lower.includes('github')) return <FaGithub className="text-gray-300" />;
-                if (lower === 'direct') return <FaLink className="text-gray-400" />;
-                return <FaLink className="text-gray-400" />;
-              };
-
-              return (
-                <div key={idx} className="flex items-center justify-between p-3 hover:bg-slate-800/30 rounded-lg transition">
-                  <div className="flex items-center gap-3">
-                    <div className="text-lg">
-                      {getReferrerIcon(ref.referrer)}
-                    </div>
-                    <p className="text-sm text-gray-300">{ref.referrer}</p>
-                  </div>
-                  <p className="text-sm font-bold text-white">{ref.clicks} clicks</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Back Button */}
       <div className="mt-8">

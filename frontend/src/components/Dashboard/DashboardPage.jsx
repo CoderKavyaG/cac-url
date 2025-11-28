@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { FiCopy, FiTrash2, FiEye, FiLock, FiRefreshCw } from 'react-icons/fi';
+import { FiCopy, FiTrash2, FiEye, FiLock, FiRefreshCw, FiDownload } from 'react-icons/fi';
+import QRCodeDisplay from './QRCodeDisplay';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -14,6 +15,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
   const [aliasInput, setAliasInput] = useState({});
   const [creatingAlias, setCreatingAlias] = useState({});
   const [sortBy, setSortBy] = useState('latest'); // latest, oldest, mostClicks, leastClicks
+  const [showQR, setShowQR] = useState(null); // null or shortId of URL to show QR for
 
   // If not logged in, show locked message
   if (!user) {
@@ -163,6 +165,13 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const getFullUrl = (url) => {
+    if (url.customAlias && url.userName) {
+      return `${API_URL}/${url.userName}/${url.customAlias}`;
+    }
+    return `${API_URL}/${url.shortId}`;
   };
 
   const getSortedUrls = () => {
@@ -336,6 +345,14 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
                     Copy
                   </button>
                   <button
+                    onClick={() => setShowQR(url)}
+                    className="flex-1 px-3 py-3 rounded-lg text-sm font-medium text-white bg-white/10 hover:bg-white/20 transition flex items-center justify-center gap-2 border border-gray-500/20"
+                    title="View QR Code"
+                  >
+                    <FiDownload size={16} />
+                    QR
+                  </button>
+                  <button
                     onClick={() => onViewLink(url)}
                     className="flex-1 px-3 py-3 rounded-lg text-sm font-medium text-white bg-white/10 hover:bg-white/20 transition flex items-center justify-center gap-2 border border-gray-500/20"
                     title="View analytics"
@@ -357,6 +374,15 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
             ))}
           </div>
         </div>
+      )}
+
+      {/* QR Code Modal */}
+      {showQR && (
+        <QRCodeDisplay
+          shortUrl={getFullUrl(showQR)}
+          shortId={showQR.shortId}
+          onClose={() => setShowQR(null)}
+        />
       )}
     </div>
   );
