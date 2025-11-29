@@ -347,11 +347,11 @@ app.get("/:userName/:customAlias", async (req, res) => {
             // Increase click count
             theurl.clicks += 1;
 
-            // Add to click history (keep multiple entries)
-            const clickHistory = theurl.clickHistory || [];
+            // Add to click history - Create a new array to avoid reference issues
+            const clickHistory = Array.isArray(theurl.clickHistory) ? [...theurl.clickHistory] : [];
             const referrer = req.headers['referer'] || req.headers['referrer'] || 'Direct';
             clickHistory.push({
-                timestamp: new Date(),
+                timestamp: new Date().toISOString(),
                 userAgent: req.headers["user-agent"] || "Unknown",
                 ipAddress:
                     req.ip ||
@@ -361,11 +361,14 @@ app.get("/:userName/:customAlias", async (req, res) => {
                 referrer: referrer,
             });
             theurl.clickHistory = clickHistory;
+            theurl.changed('clickHistory', true); // Mark field as changed for Sequelize
 
             // Save updates
             await theurl.save();
+            console.log(`✓ Click recorded for ${theurl.shortId}: Total clicks = ${theurl.clicks}, History length = ${theurl.clickHistory.length}`);
 
             // Redirect to original URL
+            return res.redirect(theurl.originalUrl);
             return res.redirect(theurl.originalUrl);
         } else {
             return res.status(404).send("URL not found or has been deleted");
@@ -397,11 +400,11 @@ app.get("/:shortId", async (req, res) => {
             // Increase click count
             theurl.clicks += 1;
 
-            // Add to click history (keep multiple entries)
-            const clickHistory = theurl.clickHistory || [];
+            // Add to click history - Create a new array to avoid reference issues
+            const clickHistory = Array.isArray(theurl.clickHistory) ? [...theurl.clickHistory] : [];
             const referrer = req.headers['referer'] || req.headers['referrer'] || 'Direct';
             clickHistory.push({
-                timestamp: new Date(),
+                timestamp: new Date().toISOString(),
                 userAgent: req.headers["user-agent"] || "Unknown",
                 ipAddress:
                     req.ip ||
@@ -411,9 +414,11 @@ app.get("/:shortId", async (req, res) => {
                 referrer: referrer,
             });
             theurl.clickHistory = clickHistory;
+            theurl.changed('clickHistory', true); // Mark field as changed for Sequelize
 
             // Save updates
             await theurl.save();
+            console.log(`✓ Click recorded for ${theurl.shortId}: Total clicks = ${theurl.clicks}, History length = ${theurl.clickHistory.length}`);
 
             // Redirect to original URL
             return res.redirect(theurl.originalUrl);

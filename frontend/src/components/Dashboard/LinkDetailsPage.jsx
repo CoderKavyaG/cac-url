@@ -9,12 +9,21 @@ import {
   FaGithub, 
   FaLink 
 } from 'react-icons/fa';
+import ClickAnalyticsChart from './ClickAnalyticsChart';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export default function LinkDetailsPage({ link, onBack }) {
   const [copied, setCopied] = useState(false);
   const [referrers, setReferrers] = useState([]);
+
+  // Debug log
+  console.log('LinkDetailsPage received link:', {
+    clicks: link.clicks,
+    clickHistoryLength: link.clickHistory ? link.clickHistory.length : 0,
+    clickHistory: link.clickHistory,
+    shortId: link.shortId
+  });
 
   useEffect(() => {
     // Parse real referrer data from clickHistory
@@ -147,7 +156,7 @@ export default function LinkDetailsPage({ link, onBack }) {
       {/* Analytics Charts */}
       <div className="mt-8">
         <h2 className="text-2xl font-bold text-white mb-6">Detailed Analytics</h2>
-        {/* Will add click graph and referrers here */}
+        <ClickAnalyticsChart clickHistory={link.clickHistory || []} />
       </div>
 
       {/* Back Button */}

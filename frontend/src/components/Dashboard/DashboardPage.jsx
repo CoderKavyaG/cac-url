@@ -62,6 +62,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
       }
 
       const data = await response.json();
+      console.log('Fetched URLs with data:', data.urls);
       setUrls(data.urls || []);
       setError('');
       

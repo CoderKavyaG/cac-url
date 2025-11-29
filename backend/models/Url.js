@@ -57,7 +57,11 @@ const Url = sequelize.define("Url", {
     },
     clickHistory: {
         type: DataTypes.JSON,
-        defaultValue: [],
+        defaultValue: null,
+        get() {
+            const value = this.getDataValue('clickHistory');
+            return Array.isArray(value) ? value : [];
+        }
     },
 }, {
     timestamps: false,
