@@ -66,7 +66,8 @@ app.post("/shorten", async (req, res) => {
             originalUrl,
             shortId,
             customAlias: aliasToUse,
-            userId: userId || null
+            userId: userId || null,
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
         });
 
         // Return both shortId and customAlias if provided
@@ -78,6 +79,7 @@ app.post("/shorten", async (req, res) => {
             shortUrl: shortUrlFull, 
             shortId: newUrl.shortId,
             customAlias: aliasToUse,
+            expiresAt: newUrl.expiresAt,
             userId: userId ? "logged-in" : "anonymous" 
         });
     } catch (err) {
@@ -432,6 +434,32 @@ app.get("/:shortId", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
+// Auto-delete expired URLs every hour
+async function cleanupExpiredUrls() {
+    try {
+        const now = new Date();
+        const deletedCount = await Url.destroy({
+            where: {
+                expiresAt: {
+                    [require('sequelize').Op.lt]: now
+                }
+            }
+        });
+        
+        if (deletedCount > 0) {
+            console.log(`🗑️  Auto-deleted ${deletedCount} expired URL(s)`);
+        }
+    } catch (err) {
+        console.error('Error cleaning up expired URLs:', err);
+    }
+}
+
+// Run cleanup job every hour
+setInterval(cleanupExpiredUrls, 60 * 60 * 1000);
+
+// Run cleanup on startup
+cleanupExpiredUrls();
 
 async function startServer() {
     try {

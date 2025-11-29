@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { FiCopy, FiTrash2, FiEye, FiLock, FiRefreshCw, FiDownload } from 'react-icons/fi';
+import { FiCopy, FiTrash2, FiEye, FiLock, FiRefreshCw, FiDownload, FiShare2 } from 'react-icons/fi';
 import QRCodeDisplay from './QRCodeDisplay';
+import ShareModal from '../ShareModal';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -16,6 +17,8 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
   const [creatingAlias, setCreatingAlias] = useState({});
   const [sortBy, setSortBy] = useState('latest'); // latest, oldest, mostClicks, leastClicks
   const [showQR, setShowQR] = useState(null); // null or shortId of URL to show QR for
+  const [showShare, setShowShare] = useState(null); // null or url object to show share modal for
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // null or shortId to confirm deletion
 
   // If not logged in, show locked message
   if (!user) {
@@ -291,51 +294,64 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
           </button>
         </div>
       ) : (
-        <div className="ml-32 border-2 border-dotted border-gray-500/50 rounded-2xl p-8 min-h-screen">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-max">
+        <div className="border-2 border-dotted border-gray-500/50 rounded-2xl p-4 md:p-8 min-h-screen">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 auto-rows-max">
             {/* Link Cards */}
             {getSortedUrls().map((url) => (
               <div
                 key={url.shortId}
-                className="bg-gradient-to-br from-slate-800/80 to-slate-900/60 border border-gray-500/30 rounded-2xl p-6 hover:border-gray-500/60 transition-all hover:shadow-2xl hover:shadow-black/40 hover:scale-[1.02] flex flex-col"
+                className="bg-gradient-to-br from-slate-800/80 to-slate-900/60 border border-gray-500/30 rounded-xl md:rounded-2xl p-4 md:p-6 hover:border-gray-500/60 transition-all hover:shadow-2xl hover:shadow-black/40 hover:scale-[1.02] flex flex-col group"
               >
-                {/* Header */}
-                <div className="mb-4">
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Short URL</p>
-                      <p className="text-lg font-mono font-bold text-white truncate" title={`localhost:3000/${url.customAlias || url.shortId}`}>
-                        {url.customAlias || url.shortId}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Clicks</p>
-                      <p className="text-3xl font-bold text-white">{url.clicks || 0}</p>
-                    </div>
+                {/* Header with Delete Icon */}
+                <div className="mb-4 flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1 md:mb-2">Short URL</p>
+                    <p className="text-base md:text-lg font-mono font-bold text-white truncate" title={`localhost:3000/${url.customAlias || url.shortId}`}>
+                      {url.customAlias || url.shortId}
+                    </p>
                   </div>
+                  {/* Delete Icon Button */}
+                  <button
+                    onClick={() => setDeleteConfirm(url.shortId)}
+                    className="flex-shrink-0 p-1.5 md:p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-950/30 transition opacity-0 group-hover:opacity-100 md:opacity-100"
+                    title="Delete link"
+                  >
+                    <FiTrash2 size={18} />
+                  </button>
+                </div>
+
+                {/* Clicks Counter */}
+                <div className="text-right mb-3 md:mb-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Clicks</p>
+                  <p className="text-2xl md:text-3xl font-bold text-white">{url.clicks || 0}</p>
                 </div>
 
                 {/* Divider */}
-                <div className="border-t border-gray-500/20 my-3"></div>
+                <div className="border-t border-gray-500/20 my-2 md:my-3"></div>
 
                 {/* Original URL */}
-                <div className="mb-4 flex-1">
-                  <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Original Link</p>
+                <div className="mb-3 md:mb-4 flex-1">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1 md:mb-2">Original Link</p>
                   <p className="text-sm text-gray-300 break-all line-clamp-2" title={url.originalUrl}>
                     {url.originalUrl}
                   </p>
                 </div>
 
                 {/* Meta Info */}
-                <div className="text-xs text-gray-600 mb-4">
-                  Created: {formatDate(url.createdAt)}
+                <div className="text-xs text-gray-600 mb-3 md:mb-4 space-y-0.5 md:space-y-1">
+                  <div>Created: {formatDate(url.createdAt)}</div>
+                  {url.expiresAt && (
+                    <div className="text-orange-500">
+                      ⏰ Expires: {formatDate(url.expiresAt)}
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-2 mt-auto">
+                <div className="flex gap-1.5 md:gap-2 mt-auto flex-wrap md:flex-nowrap">
                   <button
                     onClick={() => handleCopy(url)}
-                    className={`flex-1 px-3 py-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 ${
+                    className={`flex-1 min-w-fit px-2 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium transition flex items-center justify-center gap-1 md:gap-2 ${
                       copied === url.shortId
                         ? 'bg-green-600/40 text-green-300 border border-green-500/40'
                         : 'bg-white/10 hover:bg-white/20 text-white border border-gray-500/20'
@@ -343,32 +359,31 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
                     title="Copy link"
                   >
                     <FiCopy size={16} />
-                    Copy
+                    <span className="hidden sm:inline">Copy</span>
                   </button>
                   <button
                     onClick={() => setShowQR(url)}
-                    className="flex-1 px-3 py-3 rounded-lg text-sm font-medium text-white bg-white/10 hover:bg-white/20 transition flex items-center justify-center gap-2 border border-gray-500/20"
+                    className="flex-1 min-w-fit px-2 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium text-white bg-white/10 hover:bg-white/20 transition flex items-center justify-center gap-1 md:gap-2 border border-gray-500/20"
                     title="View QR Code"
                   >
                     <FiDownload size={16} />
-                    QR
+                    <span className="hidden sm:inline">QR</span>
+                  </button>
+                  <button
+                    onClick={() => setShowShare(url)}
+                    className="flex-1 min-w-fit px-2 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium text-blue-300 bg-blue-950/20 hover:bg-blue-950/40 transition flex items-center justify-center gap-1 md:gap-2 border border-blue-500/20 hover:border-blue-500/40"
+                    title="Share link"
+                  >
+                    <FiShare2 size={16} />
+                    <span className="hidden sm:inline">Share</span>
                   </button>
                   <button
                     onClick={() => onViewLink(url)}
-                    className="flex-1 px-3 py-3 rounded-lg text-sm font-medium text-white bg-white/10 hover:bg-white/20 transition flex items-center justify-center gap-2 border border-gray-500/20"
+                    className="flex-1 min-w-fit px-2 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium text-white bg-white/10 hover:bg-white/20 transition flex items-center justify-center gap-1 md:gap-2 border border-gray-500/20"
                     title="View analytics"
                   >
                     <FiEye size={16} />
-                    Stats
-                  </button>
-                  <button
-                    onClick={() => handleDelete(url.shortId)}
-                    disabled={loading}
-                    className="flex-1 px-3 py-3 rounded-lg text-sm font-medium text-red-400 bg-red-950/20 hover:bg-red-950/40 disabled:opacity-50 transition flex items-center justify-center gap-2 border border-red-500/20 hover:border-red-500/40"
-                    title="Delete link"
-                  >
-                    <FiTrash2 size={16} />
-                    Delete
+                    <span className="hidden sm:inline">Stats</span>
                   </button>
                 </div>
               </div>
@@ -384,6 +399,44 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
           shortId={showQR.shortId}
           onClose={() => setShowQR(null)}
         />
+      )}
+
+      {/* Share Modal */}
+      {showShare && (
+        <ShareModal
+          url={showShare}
+          onClose={() => setShowShare(null)}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-gray-500/30 rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-2">Delete URL?</h3>
+            <p className="text-gray-300 mb-6">
+              This will permanently delete the shortened URL. This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 px-4 rounded-lg font-medium transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  handleDelete(deleteConfirm);
+                  setDeleteConfirm(null);
+                }}
+                disabled={loading}
+                className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white py-2 px-4 rounded-lg font-medium transition"
+              >
+                {loading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
