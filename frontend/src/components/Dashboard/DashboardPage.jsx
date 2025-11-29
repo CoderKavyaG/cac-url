@@ -315,7 +315,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
                 <div className="mb-4 flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1 md:mb-2">Short URL</p>
-                    <p className="text-base md:text-lg font-mono font-bold text-white truncate" title={`localhost:3000/${url.customAlias || url.shortId}`}>
+                    <p className="text-base md:text-lg font-mono font-bold text-white truncate" title={`${API_URL}/${url.customAlias || url.shortId}`}>
                       {url.customAlias || url.shortId}
                     </p>
                   </div>

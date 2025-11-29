@@ -2,6 +2,8 @@
 import { useAuth } from "../context/AuthContext";
 import { FiHome, FiBarChart2, FiSettings, FiLogOut, FiCopy, FiTrash2 } from "react-icons/fi";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 export default function Dashboard({ setCurrentPage }) {
   const { user, token, logout } = useAuth();
   const [urls, setUrls] = useState([]);
@@ -16,7 +18,7 @@ export default function Dashboard({ setCurrentPage }) {
   const fetchUrls = async () => {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:3000/urls");
+      const response = await fetch(`${API_URL}/urls`);
       if (!response.ok) throw new Error("Failed to fetch");
       const data = await response.json();
       setUrls(data.urls || []);
@@ -29,7 +31,7 @@ export default function Dashboard({ setCurrentPage }) {
   };
 
   const handleCopy = (shortId) => {
-    const fullUrl = `http://localhost:3000/${shortId}`;
+    const fullUrl = `${API_URL}/${shortId}`;
     navigator.clipboard.writeText(fullUrl);
     setCopied(shortId);
     setTimeout(() => setCopied(null), 2000);
@@ -38,7 +40,7 @@ export default function Dashboard({ setCurrentPage }) {
   const handleDelete = async (shortId) => {
     if (!window.confirm("Delete this URL? This action cannot be undone.")) return;
     try {
-      const response = await fetch(`http://localhost:3000/urls/${shortId}`, {
+      const response = await fetch(`${API_URL}/urls/${shortId}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Failed to delete");

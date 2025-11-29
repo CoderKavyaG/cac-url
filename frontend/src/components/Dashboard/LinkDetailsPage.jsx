@@ -116,7 +116,7 @@ export default function LinkDetailsPage({ link, onBack }) {
           <div>
             <p className="text-sm text-gray-400 uppercase tracking-wider mb-2">Short Link</p>
             <div className="flex items-center gap-2">
-              <p className="text-white font-mono font-bold text-sm md:text-base">localhost:3000/{link.shortId}</p>
+              <p className="text-white font-mono font-bold text-sm md:text-base">{API_URL.replace(/https?:\/\//, '')}/{link.shortId}</p>
               <button
                 onClick={handleCopy}
                 className={`p-2 rounded-lg transition ${
