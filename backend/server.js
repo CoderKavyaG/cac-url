@@ -31,7 +31,7 @@ app.post("/shorten", async (req, res) => {
 
         if (token) {
             try {
-                const decoded = jwt.verify(token, process.env.JWT_SECRET || "Kavyasecretkey12323");
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 userId = decoded.userId;
             } catch (err) {
                 // If token is invalid, just treat as anonymous

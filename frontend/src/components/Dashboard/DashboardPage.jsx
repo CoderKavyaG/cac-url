@@ -11,14 +11,13 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
   const [urls, setUrls] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [copied, setCopied] = useState(null);
   const [aliasInput, setAliasInput] = useState({});
   const [creatingAlias, setCreatingAlias] = useState({});
   const [sortBy, setSortBy] = useState('latest'); // latest, oldest, mostClicks, leastClicks
   const [showQR, setShowQR] = useState(null); // null or shortId of URL to show QR for
   const [showShare, setShowShare] = useState(null); // null or url object to show share modal for
-  const [deleteConfirm, setDeleteConfirm] = useState(null); // null or shortId to confirm deletion
+  const [daysRemaining, setDaysRemaining] = useState({});
 
   // If not logged in, show locked message
   if (!user) {
@@ -43,11 +42,32 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
   useEffect(() => {
     // Load URLs when component mounts or when user/token changes
     if (user && token) {
-      fetchUrls(true);
+      fetchUrls();
     }
   }, [user, token]);
 
-  const fetchUrls = async (showTransferMessage = false) => {
+  // Update expiration countdown timer every minute
+  useEffect(() => {
+    const updateCountdown = () => {
+      const newDaysRemaining = {};
+      urls.forEach(url => {
+        if (url.expiresAt) {
+          const expiryDate = new Date(url.expiresAt);
+          const now = new Date();
+          const msRemaining = expiryDate.getTime() - now.getTime();
+          const daysLeft = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
+          newDaysRemaining[url.shortId] = Math.max(0, daysLeft);
+        }
+      });
+      setDaysRemaining(newDaysRemaining);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, [urls]);
+
+  const fetchUrls = async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_URL}/urls`, {
@@ -68,11 +88,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
       console.log('Fetched URLs with data:', data.urls);
       setUrls(data.urls || []);
       setError('');
-      
-      if (showTransferMessage && data.urls.length > 0) {
-        setSuccess(`✓ Loaded ${data.urls.length} URL(s) to your dashboard!`);
-        setTimeout(() => setSuccess(''), 5000);
-      }
+      setSuccess('');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -108,6 +124,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
       }
 
       setUrls(urls.filter(url => url.shortId !== shortId));
+      setError('');
     } catch (err) {
       setError(err.message);
     }
@@ -156,9 +173,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
           : url
       ));
 
-      setSuccess("✓ Custom alias created successfully!");
       setAliasInput(prev => ({ ...prev, [shortId]: "" }));
-      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       setError(err.message || "Failed to create alias");
     } finally {
@@ -273,12 +288,6 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
         </div>
       )}
 
-      {success && (
-        <div className="bg-green-950/30 border border-green-700/50 rounded-lg p-4 mb-6 text-green-400 text-sm">
-          {success}
-        </div>
-      )}
-
 
 
       {urls.length === 0 ? (
@@ -312,7 +321,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
                   </div>
                   {/* Delete Icon Button */}
                   <button
-                    onClick={() => setDeleteConfirm(url.shortId)}
+                    onClick={() => handleDelete(url.shortId)}
                     className="flex-shrink-0 p-1.5 md:p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-950/30 transition opacity-0 group-hover:opacity-100 md:opacity-100"
                     title="Delete link"
                   >
@@ -341,8 +350,8 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
                 <div className="text-xs text-gray-600 mb-3 md:mb-4 space-y-0.5 md:space-y-1">
                   <div>Created: {formatDate(url.createdAt)}</div>
                   {url.expiresAt && (
-                    <div className="text-orange-500">
-                      ⏰ Expires: {formatDate(url.expiresAt)}
+                    <div className="text-orange-500 font-semibold text-sm">
+                      ⏰ Expiring in {daysRemaining[url.shortId] ?? '...'} days
                     </div>
                   )}
                 </div>
@@ -407,36 +416,6 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
           url={showShare}
           onClose={() => setShowShare(null)}
         />
-      )}
-
-      {/* Delete Confirmation Dialog */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-gray-500/30 rounded-2xl max-w-sm w-full p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-2">Delete URL?</h3>
-            <p className="text-gray-300 mb-6">
-              This will permanently delete the shortened URL. This action cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 px-4 rounded-lg font-medium transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  handleDelete(deleteConfirm);
-                  setDeleteConfirm(null);
-                }}
-                disabled={loading}
-                className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white py-2 px-4 rounded-lg font-medium transition"
-              >
-                {loading ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
