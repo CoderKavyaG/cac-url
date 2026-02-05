@@ -20,7 +20,7 @@ const recordClick = async (url, req) => {
   url.clicks += 1;
 
   const clickHistory = Array.isArray(url.clickHistory) ? [...url.clickHistory] : [];
-  const referrer = req.headers['referer'] || req.headers['referrer'] || 'Direct';
+  const referrer = req.get('Referrer') || req.get('Referer') || 'Direct';
   const userAgentString = req.headers['user-agent'] || 'Unknown';
 
   // Parse User Agent
@@ -28,7 +28,6 @@ const recordClick = async (url, req) => {
   const uaResult = parser.getResult();
 
   // Parse IP for Geo-location
-  // Handle proxied requests (x-forwarded-for can be a comma-separated list)
   let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
   if (ip && ip.includes(',')) {
     ip = ip.split(',')[0].trim();
@@ -37,12 +36,23 @@ const recordClick = async (url, req) => {
   // Localhost (::1 or 127.0.0.1) won't return geo data
   const geo = geoip.lookup(ip) || {};
 
+  // Better Browser Detection Fallback
+  let browser = uaResult.browser.name;
+  if (!browser) {
+    const lowerUA = userAgentString.toLowerCase();
+    if (lowerUA.includes('chrome')) browser = 'Chrome';
+    else if (lowerUA.includes('firefox')) browser = 'Firefox';
+    else if (lowerUA.includes('safari')) browser = 'Safari';
+    else if (lowerUA.includes('edge')) browser = 'Edge';
+    else browser = 'Other';
+  }
+
   clickHistory.push({
     timestamp: new Date().toISOString(),
     ipAddress: ip || 'Unknown',
     referrer,
     userAgent: userAgentString,
-    browser: uaResult.browser.name || 'Unknown',
+    browser: browser,
     os: uaResult.os.name || 'Unknown',
     device: uaResult.device.type || 'Desktop', // 'console', 'mobile', 'tablet', 'smarttv', 'wearable', 'embedded'
     country: geo.country || 'Unknown',

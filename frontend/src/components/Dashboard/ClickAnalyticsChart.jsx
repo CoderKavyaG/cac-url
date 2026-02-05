@@ -47,19 +47,19 @@ const ClickAnalyticsChart = ({ clickHistory = [] }) => {
         // 2. Drill-downs
         clickHistory.forEach(click => {
             // Browser
-            const browser = click.browser || 'Unknown';
+            let browser = click.browser || 'Unknown';
+            if (browser === 'Unknown') browser = 'Other';
             data.browsers[browser] = (data.browsers[browser] || 0) + 1;
 
-            // OS
-            const os = click.os || 'Unknown';
-            data.os[os] = (data.os[os] || 0) + 1;
+            // OS - Removed (skipped)
 
             // Device
-            const device = click.device || 'Desktop'; // Default to desktop if missing
+            const device = click.device || 'Desktop';
             data.devices[device] = (data.devices[device] || 0) + 1;
 
             // Country
-            const country = click.country || 'Unknown';
+            let country = click.country || 'Unknown';
+            if (country === 'Unknown') country = 'Unknown Location';
             data.countries[country] = (data.countries[country] || 0) + 1;
 
             // Referrer
@@ -70,6 +70,11 @@ const ClickAnalyticsChart = ({ clickHistory = [] }) => {
                     ref = url.hostname.replace('www.', '');
                 }
             } catch (e) { }
+
+            if (ref === 'Direct' || ref === 'Unknown' || ref === 'direct') {
+                ref = 'Direct / Private';
+            }
+
             data.referrers[ref] = (data.referrers[ref] || 0) + 1;
         });
 
@@ -166,8 +171,8 @@ const ClickAnalyticsChart = ({ clickHistory = [] }) => {
                                 key={f}
                                 onClick={() => setFilterBy(f)}
                                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filterBy === f
-                                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
-                                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
+                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
                                     }`}
                             >
                                 {f === 'week' ? 'Last 7 Days' : 'Last 24 Hours'}
@@ -211,10 +216,9 @@ const ClickAnalyticsChart = ({ clickHistory = [] }) => {
                 </div>
             </div>
 
-            {/* Drill Down Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Drill Down Grid - Removed OS, now 2 cols */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <DonutChart data={stats.devices} title="Devices" />
-                <DonutChart data={stats.os} title="Operating Systems" />
                 <DonutChart data={stats.browsers} title="Browsers" />
             </div>
 
@@ -225,7 +229,7 @@ const ClickAnalyticsChart = ({ clickHistory = [] }) => {
                     <h3 className="text-lg font-bold text-white mb-6">Top Locations</h3>
                     <div className="w-full h-64">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={stats.countries} layout="vertical" margin={{ left: 20 }}>
+                            <BarChart data={stats.countries} layout="vertical" margin={{ left: 20, right: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#333" horizontal={false} />
                                 <XAxis type="number" hide />
                                 <YAxis
@@ -236,8 +240,12 @@ const ClickAnalyticsChart = ({ clickHistory = [] }) => {
                                     axisLine={false}
                                     tickLine={false}
                                 />
-                                <Tooltip cursor={{ fill: 'transparent' }} content={<CustomTooltip />} />
-                                <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20}>
+                                <Tooltip
+                                    cursor={{ fill: 'transparent' }}
+                                    content={<CustomTooltip />}
+                                    contentStyle={{ backgroundColor: '#000', border: '1px solid #333', borderRadius: '8px' }}
+                                />
+                                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
                                     {stats.countries.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
@@ -249,11 +257,13 @@ const ClickAnalyticsChart = ({ clickHistory = [] }) => {
 
                 {/* Referrers List */}
                 <div className="bg-black/50 border border-gray-800 rounded-2xl p-6">
-                    <h3 className="text-lg font-bold text-white mb-6">Top Referrers</h3>
-                    <div className="space-y-4">
+                    <h3 className="text-lg font-bold text-white mb-6">Traffic Sources</h3>
+                    <div className="space-y-4 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
                         {stats.referrers.map((ref, idx) => (
                             <div key={idx} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:border-purple-500/30 transition-colors">
-                                <span className="text-gray-300 font-medium truncate max-w-[200px]">{ref.name}</span>
+                                <span className={`font-medium truncate max-w-[200px] ${ref.name === 'Direct / Private' ? 'text-gray-500 italic' : 'text-gray-300'}`}>
+                                    {ref.name}
+                                </span>
                                 <div className="flex items-center gap-3">
                                     <div className="h-2 w-24 bg-gray-800 rounded-full overflow-hidden">
                                         <div
