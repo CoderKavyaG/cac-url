@@ -250,52 +250,10 @@ const ClickAnalyticsChart = ({ clickHistory = [] }) => {
             </div>
 
             {/* Grid for Bottom Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                {/* Devices & Browsers Tabbed Card */}
-                <div className="bg-black border border-gray-800 rounded-xl p-6 flex flex-col h-full">
-                    <div className="flex items-center gap-6 border-b border-gray-800 pb-4 mb-2">
-                        <button
-                            onClick={() => setActiveTab('devices')}
-                            className={`text-sm font-semibold pb-1 relative transition-colors ${activeTab === 'devices' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
-                                }`}
-                        >
-                            Devices
-                            {activeTab === 'devices' && (
-                                <span className="absolute bottom-[-17px] left-0 w-full h-0.5 bg-white rounded-t-full"></span>
-                            )}
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('browsers')}
-                            className={`text-sm font-semibold pb-1 relative transition-colors ${activeTab === 'browsers' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
-                                }`}
-                        >
-                            Browsers
-                            {activeTab === 'browsers' && (
-                                <span className="absolute bottom-[-17px] left-0 w-full h-0.5 bg-white rounded-t-full"></span>
-                            )}
-                        </button>
-                    </div>
-
-                    <AnalyticsList
-                        data={activeTab === 'devices' ? stats.devices : stats.browsers}
-                        type="generic"
-                        total={stats.total}
-                    />
-                </div>
-
-                {/* Countries Card */}
-                <div className="bg-black border border-gray-800 rounded-xl p-6 flex flex-col h-full">
-                    <h3 className="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wider">Top Locations</h3>
-                    <AnalyticsList
-                        data={stats.countries}
-                        type="country"
-                        total={stats.total}
-                    />
-                </div>
+            <div className="grid grid-cols-1 gap-6">
 
                 {/* Referrers Card */}
-                <div className="bg-black border border-gray-800 rounded-xl p-6 flex flex-col h-full md:col-span-2">
+                <div className="bg-black border border-gray-800 rounded-xl p-6 flex flex-col h-full">
                     <h3 className="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wider">Top Referrers</h3>
                     <AnalyticsList
                         data={stats.referrers}

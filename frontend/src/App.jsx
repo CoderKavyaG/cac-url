@@ -22,7 +22,13 @@ function App() {
 
   return (
     <div className="min-h-screen w-full bg-black text-white">
-
+      {/* Neon purple glow from top - Only on Home */}
+      {currentPage === 'home' && (
+        <>
+          <div className="neon-glow-top"></div>
+          <div className="neon-glow-secondary"></div>
+        </>
+      )}
 
       {/* Content wrapper with sidebar and main area */}
       <div className="relative z-10 flex flex-col min-h-screen">
