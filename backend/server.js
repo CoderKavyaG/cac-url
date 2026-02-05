@@ -99,6 +99,13 @@ app.use(errorHandler);
 /**
  * Clean up expired URLs every hour
  */
+// ===========================================
+// SCHEDULED TASKS
+// ===========================================
+
+/**
+ * Clean up expired URLs every hour
+ */
 async function cleanupExpiredUrls() {
   try {
     const now = new Date();
@@ -116,16 +123,20 @@ async function cleanupExpiredUrls() {
   }
 }
 
-// Run cleanup every hour
-setInterval(cleanupExpiredUrls, 60 * 60 * 1000);
+// Run cleanup every hour (Only works if process stays alive, e.g. local dev)
+if (require.main === module) {
+  setInterval(cleanupExpiredUrls, 60 * 60 * 1000);
+}
 
 // ===========================================
-// SERVER STARTUP
+// DATABASE INITIALIZATION
 // ===========================================
 
-const PORT = process.env.PORT || 3000;
+let isDbInitialized = false;
 
-async function startServer() {
+const initDB = async () => {
+  if (isDbInitialized) return;
+
   try {
     // Test database connection
     await sequelize.authenticate();
@@ -138,21 +149,59 @@ async function startServer() {
     // Run initial cleanup
     await cleanupExpiredUrls();
 
-    // Start server
-    app.listen(PORT, () => {
-      console.log('═══════════════════════════════════════════');
-      console.log(`✓ Server running on port ${PORT}`);
-      console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`✓ API URL: ${process.env.API_URL || `http://localhost:${PORT}`}`);
-      console.log('═══════════════════════════════════════════');
-    });
+    isDbInitialized = true;
   } catch (err) {
-    console.error('═══════════════════════════════════════════');
-    console.error('✗ Failed to start server');
-    console.error('Error:', err.message);
-    console.error('═══════════════════════════════════════════');
-    process.exit(1);
+    console.error('✗ Failed to initialize database:', err.message);
+    // Don't swallow error here, let it bubble up so middleware catches it
+    throw err;
   }
+};
+
+// Initialize DB immediately (promise will resolve when done)
+// For Vercel, this promise starts executing when the file is loaded.
+const dbInitPromise = initDB().catch(err => {
+  console.error('Initial DB init failed, will retry on request', err);
+});
+
+// Middleware to ensure DB is ready before handling requests (Critical for Vercel Cold Starts)
+app.use(async (req, res, next) => {
+  if (!isDbInitialized) {
+    try {
+      await dbInitPromise;
+      // Double check in case promise failed but we want to retry
+      if (!isDbInitialized) await initDB();
+    } catch (err) {
+      console.error('Database connection failed during request:', err);
+      return res.status(500).json({ error: 'Database connection failed', details: err.message });
+    }
+  }
+  next();
+});
+
+
+// ===========================================
+// SERVER STARTUP
+// ===========================================
+
+const PORT = process.env.PORT || 3000;
+
+// Start server if run directly (Local Development)
+if (require.main === module) {
+  (async () => {
+    try {
+      await initDB();
+      app.listen(PORT, () => {
+        console.log('═══════════════════════════════════════════');
+        console.log(`✓ Server running on port ${PORT}`);
+        console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`✓ API URL: ${process.env.API_URL || `http://localhost:${PORT}`}`);
+        console.log('═══════════════════════════════════════════');
+      });
+    } catch (err) {
+      console.error('Failed to start local server:', err);
+      process.exit(1);
+    }
+  })();
 }
 
 // Graceful shutdown
@@ -167,11 +216,6 @@ process.on('SIGINT', async () => {
   await sequelize.close();
   process.exit(0);
 });
-
-// Start server if run directly
-if (require.main === module) {
-  startServer();
-}
 
 // Export for Vercel
 module.exports = app;
