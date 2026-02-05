@@ -2,14 +2,14 @@
  * API Service - Centralized API calls for the frontend
  */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
 
 /**
  * Base fetch wrapper with error handling
  */
 async function apiRequest(endpoint, options = {}) {
   const url = `${API_URL}${endpoint}`;
-  
+
   const config = {
     headers: {
       'Content-Type': 'application/json',
@@ -68,7 +68,7 @@ export const urlApi = {
   async shorten(originalUrl, customAlias = null) {
     const body = { originalUrl };
     if (customAlias) body.customAlias = customAlias;
-    
+
     return apiRequest('/shorten', {
       method: 'POST',
       body: JSON.stringify(body),
