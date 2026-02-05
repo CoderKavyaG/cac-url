@@ -82,23 +82,23 @@ const ClickAnalyticsChart = ({ clickHistory = [] }) => {
     return (
         <div className="w-full space-y-6">
             {/* Filter Buttons */}
-            <div className="flex gap-4">
+            <div className="flex gap-3">
                 <button
                     onClick={() => setFilterBy('week')}
-                    className={`px-6 py-3 rounded-lg font-semibold transition ${
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
                         filterBy === 'week'
-                            ? 'bg-blue-600 text-white border border-blue-500'
-                            : 'bg-white/10 text-gray-300 border border-gray-500/30 hover:bg-white/20'
+                            ? 'bg-purple-900/60 text-purple-200 border border-purple-500/50 shadow-lg shadow-purple-500/20'
+                            : 'bg-black text-gray-400 border border-gray-800 hover:border-purple-500/30 hover:text-purple-300'
                     }`}
                 >
                     Week
                 </button>
                 <button
                     onClick={() => setFilterBy('hours')}
-                    className={`px-6 py-3 rounded-lg font-semibold transition ${
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
                         filterBy === 'hours'
-                            ? 'bg-blue-600 text-white border border-blue-500'
-                            : 'bg-white/10 text-gray-300 border border-gray-500/30 hover:bg-white/20'
+                            ? 'bg-purple-900/60 text-purple-200 border border-purple-500/50 shadow-lg shadow-purple-500/20'
+                            : 'bg-black text-gray-400 border border-gray-800 hover:border-purple-500/30 hover:text-purple-300'
                     }`}
                 >
                     24 Hours
@@ -106,9 +106,9 @@ const ClickAnalyticsChart = ({ clickHistory = [] }) => {
             </div>
 
             {/* Graph Container */}
-            <div className="bg-slate-900/40 border border-gray-500/30 rounded-2xl p-8 w-full">
+            <div className="bg-black border border-gray-800 rounded-2xl p-8 w-full shadow-2xl shadow-purple-900/10">
                 <h3 className="text-xl font-bold text-white mb-2">Clicks Over Time</h3>
-                <p className="text-gray-400 text-sm mb-6">Total: <span className="text-blue-400 font-bold">{totalClicks} clicks</span></p>
+                <p className="text-gray-400 text-sm mb-6">Total: <span className="text-purple-400 font-bold">{totalClicks} clicks</span></p>
 
                 {totalClicks > 0 && chartData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={400}>
@@ -123,19 +123,20 @@ const ClickAnalyticsChart = ({ clickHistory = [] }) => {
                             />
                             <Tooltip 
                                 contentStyle={{
-                                    backgroundColor: '#1e293b',
-                                    border: '1px solid rgba(148, 163, 184, 0.5)',
-                                    borderRadius: '8px'
+                                    backgroundColor: '#000000',
+                                    border: '1px solid rgba(147, 51, 234, 0.5)',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 4px 20px rgba(147, 51, 234, 0.2)'
                                 }}
-                                labelStyle={{ color: '#e2e8f0' }}
+                                labelStyle={{ color: '#c4b5fd' }}
                                 formatter={(value) => [value, 'Clicks']}
                             />
                             <Line
                                 type="monotone"
                                 dataKey="value"
-                                stroke="#3b82f6"
-                                dot={{ fill: '#3b82f6', r: 5 }}
-                                strokeWidth={2}
+                                stroke="#a855f7"
+                                dot={{ fill: '#a855f7', r: 5, strokeWidth: 2, stroke: '#581c87' }}
+                                strokeWidth={3}
                                 isAnimationActive={true}
                             />
                         </LineChart>

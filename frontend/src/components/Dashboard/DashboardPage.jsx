@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { urlApi } from '../../services/api';
-import { FiCopy, FiTrash2, FiEye, FiLock, FiRefreshCw, FiDownload, FiShare2 } from 'react-icons/fi';
+import { FiCopy, FiTrash2, FiLock, FiRefreshCw, FiDownload, FiShare2 } from 'react-icons/fi';
 import QRCodeDisplay from './QRCodeDisplay';
 import ShareModal from '../ShareModal';
 
@@ -230,7 +230,8 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
             {getSortedUrls().map((url) => (
               <div
                 key={url.shortId}
-                className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-xl md:rounded-2xl p-4 md:p-6 hover:border-purple-500/30 transition-all hover:shadow-2xl hover:shadow-purple-900/20 hover:scale-[1.02] flex flex-col group"
+                onClick={() => onViewLink(url)}
+                className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-xl md:rounded-2xl p-4 md:p-6 hover:border-purple-500/30 transition-all hover:shadow-2xl hover:shadow-purple-900/20 hover:scale-[1.02] flex flex-col group cursor-pointer"
               >
                 {/* Header with Delete Icon */}
                 <div className="mb-4 flex items-start justify-between gap-2">
@@ -278,13 +279,13 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-1.5 md:gap-2 mt-auto flex-wrap md:flex-nowrap">
+                <div className="flex gap-1.5 md:gap-2 mt-auto flex-wrap md:flex-nowrap" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => handleCopy(url)}
                     className={`flex-1 min-w-fit px-2 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium transition flex items-center justify-center gap-1 md:gap-2 ${
                       copied === url.shortId
                         ? 'bg-green-900/40 text-green-300 border border-green-500/40'
-                        : 'bg-black hover:bg-gray-900 text-white border border-gray-800'
+                        : 'bg-purple-900/30 hover:bg-purple-900/50 text-purple-200 border border-purple-500/30 hover:border-purple-500/50'
                     }`}
                     title="Copy link"
                   >
@@ -293,7 +294,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
                   </button>
                   <button
                     onClick={() => setShowQR(url)}
-                    className="flex-1 min-w-fit px-2 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium text-white bg-black hover:bg-gray-900 transition flex items-center justify-center gap-1 md:gap-2 border border-gray-800"
+                    className="flex-1 min-w-fit px-2 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium text-purple-200 bg-purple-900/30 hover:bg-purple-900/50 transition flex items-center justify-center gap-1 md:gap-2 border border-purple-500/30 hover:border-purple-500/50"
                     title="View QR Code"
                   >
                     <FiDownload size={16} />
@@ -301,19 +302,11 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
                   </button>
                   <button
                     onClick={() => setShowShare(url)}
-                    className="flex-1 min-w-fit px-2 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium text-purple-300 bg-purple-900/30 hover:bg-purple-900/50 transition flex items-center justify-center gap-1 md:gap-2 border border-purple-500/30 hover:border-purple-500/50"
+                    className="flex-1 min-w-fit px-2 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium text-purple-200 bg-purple-900/30 hover:bg-purple-900/50 transition flex items-center justify-center gap-1 md:gap-2 border border-purple-500/30 hover:border-purple-500/50"
                     title="Share link"
                   >
                     <FiShare2 size={16} />
                     <span className="hidden sm:inline">Share</span>
-                  </button>
-                  <button
-                    onClick={() => onViewLink(url)}
-                    className="flex-1 min-w-fit px-2 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium text-white bg-black hover:bg-gray-900 transition flex items-center justify-center gap-1 md:gap-2 border border-gray-800"
-                    title="View analytics"
-                  >
-                    <FiEye size={16} />
-                    <span className="hidden sm:inline">Stats</span>
                   </button>
                 </div>
               </div>
