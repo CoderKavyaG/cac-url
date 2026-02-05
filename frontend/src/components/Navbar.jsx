@@ -1,12 +1,9 @@
-import React, { useState } from "react";
-import { FiUser } from "react-icons/fi";
+import React from "react";
+import { FaGoogle } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
-import SignUpModal from "./SignUpModal";
 
-export default function Navbar({ setCurrentPage, onShowAuthModal }) {
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [isLoginMode, setIsLoginMode] = useState(false);
-  const { user, logout } = useAuth();
+export default function Navbar({ setCurrentPage }) {
+  const { user, logout, signInWithGoogle } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -14,49 +11,53 @@ export default function Navbar({ setCurrentPage, onShowAuthModal }) {
   };
 
   return (
-    <>
-      <nav className="w-full flex items-center justify-between py-4 sm:py-6 px-4 sm:px-6 lg:px-10">
-        <div 
-          onClick={() => setCurrentPage("home")}
-          className="text-white text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight font-mono cursor-pointer hover:text-gray-300 transition"
-        >
-          cac-url
-        </div>
+    <nav className="w-full flex items-center justify-between py-4 sm:py-6 px-4 sm:px-6 lg:px-10">
+      <div 
+        onClick={() => setCurrentPage("home")}
+        className="text-white text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight font-mono cursor-pointer hover:text-gray-300 transition"
+      >
+        cac-url
+      </div>
 
-        <div className="flex items-center gap-2 sm:gap-4">
-          {/* Profile Icon */}
+      <div className="flex items-center gap-2 sm:gap-4">
+        {user ? (
+          /* Logged in - Show profile */
           <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-gray-700/50 bg-black shadow-lg shadow-black/50">
-            <FiUser size={18} className="text-gray-400 sm:w-5 sm:h-5" />
-            
-            {user ? (
-              <div className="flex items-center gap-2 sm:gap-3">
-                <span className="text-gray-300 text-xs sm:text-sm max-w-[100px] sm:max-w-none truncate">{user.email}</span>
-                <button
-                  onClick={handleLogout}
-                  className="text-gray-400 hover:text-red-400 transition text-xs sm:text-sm font-semibold"
-                >
-                  Logout
-                </button>
-              </div>
+            {user.picture ? (
+              <img 
+                src={user.picture} 
+                alt={user.name || 'Profile'} 
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover"
+                referrerPolicy="no-referrer"
+              />
             ) : (
-              <button
-                onClick={() => {
-                  setIsLoginMode(true);
-                  setShowAuthModal(true);
-                }}
-                className="text-gray-300 hover:text-white transition text-xs sm:text-sm font-semibold whitespace-nowrap"
-              >
-                Sign In
-              </button>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                {(user.name || user.email || 'U').charAt(0).toUpperCase()}
+              </div>
             )}
+            <span className="text-gray-300 text-xs sm:text-sm max-w-[80px] sm:max-w-[120px] truncate hidden sm:block">
+              {user.name || user.email}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="text-gray-400 hover:text-red-400 transition text-xs sm:text-sm font-semibold"
+            >
+              Logout
+            </button>
           </div>
-        </div>
-      </nav>
-
-      {/* Auth Modal - Unified Sign Up / Sign In */}
-      {showAuthModal && (
-        <SignUpModal onClose={() => setShowAuthModal(false)} isLogin={isLoginMode} />
-      )}
-    </>
+        ) : (
+          /* Not logged in - Google Sign In button */
+          <button
+            onClick={signInWithGoogle}
+            className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-black border border-gray-700/50 hover:border-purple-500/50 shadow-lg shadow-black/50 transition group"
+          >
+            <FaGoogle size={16} className="text-white group-hover:text-purple-300 transition" />
+            <span className="text-gray-300 group-hover:text-white text-xs sm:text-sm font-semibold transition">
+              Sign in with Google
+            </span>
+          </button>
+        )}
+      </div>
+    </nav>
   );
 }

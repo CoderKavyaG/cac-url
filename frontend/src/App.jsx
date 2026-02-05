@@ -6,19 +6,16 @@ import Landing from "./components/Landing";
 import Sidebar from "./components/Sidebar";
 import DashboardPage from "./components/Dashboard/DashboardPage";
 import LinkDetailsPage from "./components/Dashboard/LinkDetailsPage";
-import SignUpModal from "./components/SignUpModal";
 
 function App() {
-  const { user, logout, loading } = useAuth();
+  const { user, logout, loading, signInWithGoogle } = useAuth();
   const [currentPage, setCurrentPage] = useState("home");
   const [selectedLink, setSelectedLink] = useState(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authChanged, setAuthChanged] = useState(false);
 
   // Force re-render when auth state changes
   useEffect(() => {
     if (user) {
-      setAuthChanged(true);
+      // User logged in
     }
   }, [user]);
 
@@ -31,7 +28,7 @@ function App() {
       {/* Content wrapper with sidebar and main area */}
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* Navbar - Constant across all pages */}
-        <Navbar setCurrentPage={setCurrentPage} onShowAuthModal={() => setShowAuthModal(true)} />
+        <Navbar setCurrentPage={setCurrentPage} />
 
         {/* Main content area with sidebar and page content */}
         <div className="flex flex-1 overflow-hidden">
@@ -45,7 +42,7 @@ function App() {
                 setCurrentPage("home");
               }}
               user={user}
-              onShowAuthModal={() => setShowAuthModal(true)}
+              onShowAuthModal={signInWithGoogle}
             />
           )}
 
@@ -67,7 +64,7 @@ function App() {
                     setSelectedLink(link);
                     setCurrentPage("linkDetails");
                   }}
-                  onShowAuthModal={() => setShowAuthModal(true)}
+                  onShowAuthModal={signInWithGoogle}
                 />
               </div>
             )}
@@ -84,13 +81,6 @@ function App() {
           </div>
         </div>
       </div>
-
-      {/* Auth Modal */}
-      {showAuthModal && (
-        <SignUpModal 
-          onClose={() => setShowAuthModal(false)}
-        />
-      )}
     </div>
   );
 }

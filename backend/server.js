@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const passport = require('./config/passport');
 const sequelize = require('./config/database');
 const { Op } = require('sequelize');
 
@@ -54,6 +55,9 @@ app.use((req, res, next) => {
 
 // Apply general rate limiting
 app.use(rateLimiters.general);
+
+// Initialize Passport
+app.use(passport.initialize());
 
 // Request logging in development
 if (process.env.NODE_ENV !== 'production') {
