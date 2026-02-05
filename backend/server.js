@@ -74,6 +74,11 @@ if (process.env.NODE_ENV !== 'production') {
 // Health check (no rate limit)
 app.use('/health', healthRoutes);
 
+// Root route for readiness check
+app.get('/', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'CAC-URL API is running' });
+});
+
 // API routes
 app.use('/auth', rateLimiters.auth, authRoutes);
 app.use('/shorten', rateLimiters.shorten, shortenRoutes);
