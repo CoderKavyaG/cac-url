@@ -32,7 +32,7 @@ app.set('trust proxy', 1);
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
+  origin: process.env.NODE_ENV === 'production'
     ? [process.env.FRONTEND_URL, process.env.API_URL].filter(Boolean)
     : '*',
   credentials: true,
@@ -131,7 +131,7 @@ async function startServer() {
     await sequelize.authenticate();
     console.log('✓ Database connection established');
 
-    // Sync database (create tables if they don\'t exist)
+    // Sync database (create tables if they don't exist)
     await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
     console.log('✓ Database synchronized');
 
@@ -168,4 +168,10 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-startServer();
+// Start server if run directly
+if (require.main === module) {
+  startServer();
+}
+
+// Export for Vercel
+module.exports = app;

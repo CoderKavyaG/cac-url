@@ -3,27 +3,6 @@ import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area
 } from 'recharts';
 
-// Helper: Country Code to Emoji
-const getFlagEmoji = (countryCode) => {
-    if (!countryCode || countryCode === 'XX' || countryCode === 'Unknown') return '🌍';
-    const codePoints = countryCode
-        .toUpperCase()
-        .split('')
-        .map(char => 127397 + char.charCodeAt());
-    return String.fromCodePoint(...codePoints);
-};
-
-// Helper: Get Country Name (Simplified)
-const getCountryName = (code) => {
-    if (!code || code === 'XX') return 'Unknown Location';
-    const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
-    try {
-        return regionNames.of(code);
-    } catch (e) {
-        return code;
-    }
-};
-
 const AnalyticsList = ({ data, type, total }) => {
     return (
         <div className="space-y-2 mt-4 max-h-[300px] overflow-y-auto custom-scrollbar">
@@ -32,9 +11,7 @@ const AnalyticsList = ({ data, type, total }) => {
 
                 // Content based on type
                 let icon;
-                if (type === 'country') {
-                    icon = <span className="text-xl mr-3">{getFlagEmoji(item.name)}</span>;
-                } else if (type === 'referrer') {
+                if (type === 'referrer') {
                     const domain = item.name === 'Direct / Private' ? 'google.com' : item.name; // Fallback icon
                     icon = (
                         <img
@@ -45,10 +22,6 @@ const AnalyticsList = ({ data, type, total }) => {
                         />
                     );
                 }
-
-                // Proper Label
-                let label = item.name;
-                if (type === 'country') label = getCountryName(item.name);
 
                 return (
                     <div key={idx} className="relative group">
@@ -62,7 +35,7 @@ const AnalyticsList = ({ data, type, total }) => {
                             <div className="flex items-center min-w-0">
                                 {icon}
                                 <span className="text-sm text-gray-200 font-medium truncate max-w-[150px] sm:max-w-[200px]">
-                                    {label}
+                                    {item.name}
                                 </span>
                             </div>
                             <div className="flex items-center gap-4">
@@ -73,27 +46,21 @@ const AnalyticsList = ({ data, type, total }) => {
                 );
             })}
 
-            {
-                data.length === 0 && (
-                    <div className="text-center py-8 text-gray-500 text-sm">No data available</div>
-                )
-            }
-        </div >
+            {data.length === 0 && (
+                <div className="text-center py-8 text-gray-500 text-sm">No data available</div>
+            )}
+        </div>
     );
 };
 
 const ClickAnalyticsChart = ({ clickHistory = [] }) => {
     const [filterBy, setFilterBy] = useState('week');
-    const [activeTab, setActiveTab] = useState('devices'); // devices | browsers
 
     const stats = useMemo(() => {
         if (!Array.isArray(clickHistory) || clickHistory.length === 0) return null;
 
         const data = {
             timeline: [],
-            browsers: {},
-            devices: {},
-            countries: {},
             referrers: {}
         };
 
@@ -133,19 +100,6 @@ const ClickAnalyticsChart = ({ clickHistory = [] }) => {
 
         // 2. Drill-downs
         clickHistory.forEach(click => {
-            // Browser
-            let browser = click.browser || 'Other';
-            if (browser === 'Unknown') browser = 'Other';
-            data.browsers[browser] = (data.browsers[browser] || 0) + 1;
-
-            // Device
-            const device = click.device || 'Desktop';
-            data.devices[device] = (data.devices[device] || 0) + 1;
-
-            // Country
-            let country = click.country || 'XX';
-            data.countries[country] = (data.countries[country] || 0) + 1;
-
             // Referrer
             let ref = click.referrer || 'Direct / Private';
             try {
@@ -165,9 +119,6 @@ const ClickAnalyticsChart = ({ clickHistory = [] }) => {
 
         return {
             timeline: data.timeline,
-            browsers: toList(data.browsers),
-            devices: toList(data.devices),
-            countries: toList(data.countries),
             referrers: toList(data.referrers),
             total: clickHistory.length
         };
@@ -198,8 +149,8 @@ const ClickAnalyticsChart = ({ clickHistory = [] }) => {
                                 key={f}
                                 onClick={() => setFilterBy(f)}
                                 className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${filterBy === f
-                                    ? 'bg-gray-800 text-white shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-300'
+                                        ? 'bg-gray-800 text-white shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-300'
                                     }`}
                             >
                                 {f === 'week' ? 'Last 7 Days' : '24 Hours'}

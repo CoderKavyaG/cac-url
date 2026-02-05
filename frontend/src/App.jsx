@@ -22,7 +22,6 @@ function App() {
 
   return (
     <div className="min-h-screen w-full bg-black text-white">
-      {/* Neon purple glow from top - Only on Home */}
       {currentPage === 'home' && (
         <>
           <div className="neon-glow-top"></div>
@@ -30,14 +29,10 @@ function App() {
         </>
       )}
 
-      {/* Content wrapper with sidebar and main area */}
       <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Navbar - Constant across all pages */}
         <Navbar setCurrentPage={setCurrentPage} />
 
-        {/* Main content area with sidebar and page content */}
         <div className="flex flex-1 overflow-hidden">
-          {/* Sidebar - Hidden on stats page */}
           {currentPage !== "linkDetails" && (
             <Sidebar
               currentPage={currentPage}
@@ -51,16 +46,13 @@ function App() {
             />
           )}
 
-          {/* Page Content - Responsive padding for sidebar and mobile nav */}
           <div className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 overflow-y-auto pb-24 md:pb-8 md:ml-16 lg:ml-20">
-            {/* Home / Landing Page */}
             {currentPage === "home" && (
               <main className="px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
                 <Landing />
               </main>
             )}
 
-            {/* Dashboard Page */}
             {currentPage === "dashboard" && (
               <div className="w-full">
                 <DashboardPage
@@ -74,7 +66,6 @@ function App() {
               </div>
             )}
 
-            {/* Link Details Page */}
             {currentPage === "linkDetails" && selectedLink && (
               <div className="w-full">
                 <LinkDetailsPage
