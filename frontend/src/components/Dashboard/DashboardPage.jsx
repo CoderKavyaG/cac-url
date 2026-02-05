@@ -23,13 +23,13 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
     return (
       <div className="w-full">
         <h1 className="text-4xl font-bold text-white mb-8">Your Shortened Links</h1>
-        <div className="bg-black border border-gray-800 rounded-2xl p-16 text-center shadow-2xl shadow-purple-900/10">
-          <FiLock size={64} className="mx-auto mb-6 text-purple-500/50" />
+        <div className="bg-black border border-gray-800 rounded-2xl p-16 text-center shadow-2xl shadow-black">
+          <FiLock size={64} className="mx-auto mb-6 text-gray-700" />
           <h2 className="text-2xl font-bold text-gray-200 mb-3">Dashboard is Locked</h2>
           <p className="text-gray-400 mb-8 text-lg">Sign in to access your shortened links and analytics</p>
           <button
             onClick={onShowAuthModal}
-            className="bg-purple-900/50 hover:bg-purple-900/70 text-purple-200 px-8 py-3 rounded-lg font-medium transition border border-purple-500/30"
+            className="bg-white/10 hover:bg-white/20 text-white px-8 py-3 rounded-lg font-medium transition border border-white/20"
           >
             Sign In Now
           </button>
@@ -40,7 +40,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
 
   const fetchUrls = useCallback(async () => {
     if (!user || !token) return;
-    
+
     try {
       setLoading(true);
       setError('');
@@ -81,10 +81,10 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
   }, [urls]);
 
   const handleCopy = (url) => {
-    const urlToCopy = url.customAlias 
+    const urlToCopy = url.customAlias
       ? `${API_URL}/${url.customAlias}`
       : `${API_URL}/${url.shortId}`;
-    
+
     navigator.clipboard.writeText(urlToCopy);
     setCopied(url.shortId);
     setTimeout(() => setCopied(null), 2000);
@@ -92,7 +92,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
 
   const handleDelete = async (shortId) => {
     if (!window.confirm('Delete this URL? It can be recovered within 30 days.')) return;
-    
+
     try {
       await urlApi.delete(shortId);
       setUrls(urls.filter(url => url.shortId !== shortId));
@@ -116,7 +116,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
 
   const getSortedUrls = () => {
     let sorted = [...urls];
-    
+
     switch (sortBy) {
       case 'oldest':
         sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
@@ -133,7 +133,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
       default:
         break;
     }
-    
+
     return sorted;
   };
 
@@ -148,7 +148,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
         <button
           onClick={fetchUrls}
           disabled={loading}
-          className="bg-black hover:bg-gray-900 disabled:opacity-50 text-purple-300 px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 border border-gray-800 shadow-lg shadow-purple-900/10"
+          className="bg-black hover:bg-gray-900 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 border border-gray-800 shadow-lg shadow-black/50"
           title="Refresh links"
         >
           <FiRefreshCw size={18} className={loading ? 'animate-spin' : ''} />
@@ -162,41 +162,37 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
           <span className="text-gray-400 text-sm font-semibold py-2">Sort by:</span>
           <button
             onClick={() => setSortBy('latest')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              sortBy === 'latest'
-                ? 'bg-purple-900/40 text-purple-300 border border-purple-500/40'
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${sortBy === 'latest'
+                ? 'bg-white/10 text-white border border-white/20'
                 : 'bg-black text-gray-300 hover:bg-gray-900 border border-gray-800'
-            }`}
+              }`}
           >
             Latest
           </button>
           <button
             onClick={() => setSortBy('oldest')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              sortBy === 'oldest'
-                ? 'bg-purple-900/40 text-purple-300 border border-purple-500/40'
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${sortBy === 'oldest'
+                ? 'bg-white/10 text-white border border-white/20'
                 : 'bg-black text-gray-300 hover:bg-gray-900 border border-gray-800'
-            }`}
+              }`}
           >
             Oldest
           </button>
           <button
             onClick={() => setSortBy('mostClicks')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              sortBy === 'mostClicks'
-                ? 'bg-purple-900/40 text-purple-300 border border-purple-500/40'
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${sortBy === 'mostClicks'
+                ? 'bg-white/10 text-white border border-white/20'
                 : 'bg-black text-gray-300 hover:bg-gray-900 border border-gray-800'
-            }`}
+              }`}
           >
             Most Clicks
           </button>
           <button
             onClick={() => setSortBy('leastClicks')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              sortBy === 'leastClicks'
-                ? 'bg-purple-900/40 text-purple-300 border border-purple-500/40'
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${sortBy === 'leastClicks'
+                ? 'bg-white/10 text-white border border-white/20'
                 : 'bg-black text-gray-300 hover:bg-gray-900 border border-gray-800'
-            }`}
+              }`}
           >
             Least Clicks
           </button>
@@ -209,16 +205,14 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
         </div>
       )}
 
-
-
       {urls.length === 0 ? (
-        <div className="bg-black border border-gray-800 rounded-2xl p-16 text-center shadow-2xl shadow-purple-900/10">
+        <div className="bg-black border border-gray-800 rounded-2xl p-16 text-center shadow-2xl shadow-black">
           <p className="text-gray-400 mb-6 text-lg">
             No shortened links yet
           </p>
           <button
             onClick={() => setCurrentPage('home')}
-            className="bg-purple-900/50 hover:bg-purple-900/70 text-purple-200 px-8 py-3 rounded-lg font-medium transition border border-purple-500/30"
+            className="bg-white/10 hover:bg-white/20 text-white px-8 py-3 rounded-lg font-medium transition border border-white/20"
           >
             Create Your First Link
           </button>
@@ -231,7 +225,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
               <div
                 key={url.shortId}
                 onClick={() => onViewLink(url)}
-                className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-xl md:rounded-2xl p-4 md:p-6 hover:border-purple-500/30 transition-all hover:shadow-2xl hover:shadow-purple-900/20 hover:scale-[1.02] flex flex-col group cursor-pointer"
+                className="bg-black border border-gray-800 rounded-xl md:rounded-2xl p-4 md:p-6 hover:border-white/20 transition-all hover:shadow-2xl hover:shadow-black/50 hover:scale-[1.02] flex flex-col group cursor-pointer"
               >
                 {/* Header with Delete Icon */}
                 <div className="mb-4 flex items-start justify-between gap-2">
@@ -243,7 +237,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
                   </div>
                   {/* Delete Icon Button */}
                   <button
-                    onClick={() => handleDelete(url.shortId)}
+                    onClick={(e) => { e.stopPropagation(); handleDelete(url.shortId); }}
                     className="flex-shrink-0 p-1.5 md:p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-950/30 transition opacity-0 group-hover:opacity-100 md:opacity-100"
                     title="Delete link"
                   >
@@ -258,7 +252,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
                 </div>
 
                 {/* Divider */}
-                <div className="border-t border-gray-500/20 my-2 md:my-3"></div>
+                <div className="border-t border-gray-800 my-2 md:my-3"></div>
 
                 {/* Original URL */}
                 <div className="mb-3 md:mb-4 flex-1">
@@ -282,11 +276,10 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
                 <div className="flex gap-1.5 md:gap-2 mt-auto flex-wrap md:flex-nowrap" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => handleCopy(url)}
-                    className={`flex-1 min-w-fit px-2 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium transition flex items-center justify-center gap-1 md:gap-2 ${
-                      copied === url.shortId
+                    className={`flex-1 min-w-fit px-2 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium transition flex items-center justify-center gap-1 md:gap-2 ${copied === url.shortId
                         ? 'bg-green-900/40 text-green-300 border border-green-500/40'
-                        : 'bg-purple-900/30 hover:bg-purple-900/50 text-purple-200 border border-purple-500/30 hover:border-purple-500/50'
-                    }`}
+                        : 'bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 hover:border-white/20'
+                      }`}
                     title="Copy link"
                   >
                     <FiCopy size={16} />
@@ -294,7 +287,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
                   </button>
                   <button
                     onClick={() => setShowQR(url)}
-                    className="flex-1 min-w-fit px-2 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium text-purple-200 bg-purple-900/30 hover:bg-purple-900/50 transition flex items-center justify-center gap-1 md:gap-2 border border-purple-500/30 hover:border-purple-500/50"
+                    className="flex-1 min-w-fit px-2 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 transition flex items-center justify-center gap-1 md:gap-2 border border-white/10 hover:border-white/20"
                     title="View QR Code"
                   >
                     <FiDownload size={16} />
@@ -302,7 +295,7 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
                   </button>
                   <button
                     onClick={() => setShowShare(url)}
-                    className="flex-1 min-w-fit px-2 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium text-purple-200 bg-purple-900/30 hover:bg-purple-900/50 transition flex items-center justify-center gap-1 md:gap-2 border border-purple-500/30 hover:border-purple-500/50"
+                    className="flex-1 min-w-fit px-2 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 transition flex items-center justify-center gap-1 md:gap-2 border border-white/10 hover:border-white/20"
                     title="Share link"
                   >
                     <FiShare2 size={16} />

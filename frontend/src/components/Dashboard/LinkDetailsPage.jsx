@@ -8,7 +8,7 @@ export default function LinkDetailsPage({ link, onBack }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    const fullUrl = link.customAlias 
+    const fullUrl = link.customAlias
       ? `${API_URL}/${link.customAlias}`
       : `${API_URL}/${link.shortId}`;
     navigator.clipboard.writeText(fullUrl);
@@ -27,7 +27,7 @@ export default function LinkDetailsPage({ link, onBack }) {
       <div className="flex items-center gap-4 mb-8">
         <button
           onClick={onBack}
-          className="p-3 bg-black hover:bg-purple-900/30 rounded-xl transition-all duration-200 flex items-center justify-center text-gray-400 hover:text-purple-300 border border-gray-800 hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/10"
+          className="p-3 bg-black hover:bg-white/5 rounded-xl transition-all duration-200 flex items-center justify-center text-gray-400 hover:text-white border border-gray-800 hover:border-white/20 hover:shadow-lg hover:shadow-black/50"
           title="Go back"
         >
           <FiArrowLeft size={22} />
@@ -39,23 +39,22 @@ export default function LinkDetailsPage({ link, onBack }) {
       </div>
 
       {/* Link Info Card */}
-      <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-2xl p-8 mb-8 shadow-2xl shadow-purple-900/10 hover:border-purple-500/20 transition-all duration-300">
+      <div className="bg-black border border-gray-800 rounded-2xl p-8 mb-8 shadow-2xl shadow-black hover:border-white/10 transition-all duration-300">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <p className="text-sm text-purple-400 uppercase tracking-wider font-semibold mb-2">Original Link</p>
-            <p className="text-white font-mono break-all text-sm md:text-base bg-black/50 p-3 rounded-lg border border-gray-800">{link.originalUrl}</p>
+            <p className="text-sm text-gray-500 uppercase tracking-wider font-semibold mb-2">Original Link</p>
+            <p className="text-white font-mono break-all text-sm md:text-base bg-white/5 p-3 rounded-lg border border-gray-800">{link.originalUrl}</p>
           </div>
           <div>
-            <p className="text-sm text-purple-400 uppercase tracking-wider font-semibold mb-2">Short Link</p>
-            <div className="flex items-center gap-2 bg-black/50 p-3 rounded-lg border border-gray-800">
+            <p className="text-sm text-gray-500 uppercase tracking-wider font-semibold mb-2">Short Link</p>
+            <div className="flex items-center gap-2 bg-white/5 p-3 rounded-lg border border-gray-800">
               <p className="text-white font-mono font-bold text-sm md:text-base flex-1">{API_URL.replace(/https?:\/\//, '')}/{link.shortId}</p>
               <button
                 onClick={handleCopy}
-                className={`p-2.5 rounded-lg transition-all duration-200 ${
-                  copied
-                    ? 'bg-green-900/40 text-green-400 border border-green-500/40'
-                    : 'bg-purple-900/30 hover:bg-purple-900/50 text-purple-300 border border-purple-500/30 hover:border-purple-500/50'
-                }`}
+                className={`p-2.5 rounded-lg transition-all duration-200 ${copied
+                  ? 'bg-green-900/40 text-green-400 border border-green-500/40'
+                  : 'bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20'
+                  }`}
               >
                 <FiCopy size={16} />
               </button>
@@ -66,7 +65,7 @@ export default function LinkDetailsPage({ link, onBack }) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-gray-800">
           <div className="bg-black/50 rounded-xl p-4 border border-gray-800">
             <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Total Clicks</p>
-            <p className="text-3xl font-bold text-purple-400">{link.clicks || 0}</p>
+            <p className="text-3xl font-bold text-white">{link.clicks || 0}</p>
           </div>
           <div className="bg-black/50 rounded-xl p-4 border border-gray-800">
             <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Created</p>
@@ -98,7 +97,7 @@ export default function LinkDetailsPage({ link, onBack }) {
       <div className="mt-8">
         <button
           onClick={onBack}
-          className="bg-purple-900/40 hover:bg-purple-900/60 text-purple-200 px-6 py-3 rounded-xl font-medium transition-all duration-200 border border-purple-500/30 hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-500/10 flex items-center gap-2"
+          className="bg-white/5 hover:bg-white/10 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 border border-white/10 hover:border-white/20 hover:shadow-lg hover:shadow-black/50 flex items-center gap-2"
         >
           <FiArrowLeft size={18} />
           Back to Dashboard
