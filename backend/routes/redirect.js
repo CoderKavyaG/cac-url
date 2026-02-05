@@ -83,57 +83,7 @@ const recordClick = async (url, req) => {
  * @desc    Redirect personalized custom URL (e.g., /johndoe/my-link)
  * @access  Public
  */
-const isBot = (userAgent) => {
-  const bots = [
-    'facebookexternalhit', 'twitterbot', 'linkedinbot',
-    'whatsapp', 'slackbot', 'telegrambot',
-    'discordbot', 'pinterest', 'googlebot', 'bingbot'
-  ];
-  const lowerUA = (userAgent || '').toLowerCase();
-  return bots.some(bot => lowerUA.includes(bot));
-};
-
-const serveMetaPage = (res, url) => {
-  const { originalUrl, seoTitle, seoDescription, seoImage } = url;
-
-  // Basic title/desc fallback
-  const title = seoTitle || 'Shared Link';
-  const description = seoDescription || 'Check out this link!';
-  const image = seoImage || ''; // Empty string if no image
-
-  return res.status(200).send(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      
-      <!-- Open Graph / Facebook -->
-      <meta property="og:type" content="website">
-      <meta property="og:url" content="${originalUrl}">
-      <meta property="og:title" content="${title}">
-      <meta property="og:description" content="${description}">
-      ${image ? `<meta property="og:image" content="${image}">` : ''}
-
-      <!-- Twitter -->
-      <meta property="twitter:card" content="summary_large_image">
-      <meta property="twitter:url" content="${originalUrl}">
-      <meta property="twitter:title" content="${title}">
-      <meta property="twitter:description" content="${description}">
-      ${image ? `<meta property="twitter:image" content="${image}">` : ''}
-
-      <title>${title}</title>
-      
-      <!-- Immediate redirect for non-bots who might see this -->
-      <meta http-equiv="refresh" content="0;url=${originalUrl}">
-      <script>window.location.replace("${originalUrl}");</script>
-    </head>
-    <body>
-      <p>Redirecting to <a href="${originalUrl}">${originalUrl}</a>...</p>
-    </body>
-    </html>
-  `);
-};
+// (Meta helper functions removed)
 
 
 /**
@@ -170,13 +120,7 @@ router.get('/:userName/:customAlias', asyncHandler(async (req, res) => {
     return res.status(410).send(get404Page('This link has expired.'));
   }
 
-  // Handle Metadata/Bot request
-  const userAgent = req.headers['user-agent'] || '';
-  if (isBot(userAgent) && (url.seoTitle || url.seoDescription || url.seoImage)) {
-    // Determine if we should record click for bots: usually NO, to avoid skewing stats.
-    // We will NOT record click for bots viewing metadata.
-    return serveMetaPage(res, url);
-  }
+  // Bot check removed by user request
 
   // Record click and redirect
   await recordClick(url, req);
@@ -212,11 +156,7 @@ router.get('/:shortId', asyncHandler(async (req, res) => {
     return res.status(410).send(get404Page('This link has expired.'));
   }
 
-  // Handle Metadata/Bot request
-  const userAgent = req.headers['user-agent'] || '';
-  if (isBot(userAgent) && (url.seoTitle || url.seoDescription || url.seoImage)) {
-    return serveMetaPage(res, url);
-  }
+  // Bot check removed by user request
 
   // Record click and redirect
   await recordClick(url, req);
