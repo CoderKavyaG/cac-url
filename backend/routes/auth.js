@@ -15,13 +15,25 @@ router.get("/google", passport.authenticate("google", {
   session: false,
 }));
 
+// Helper to ensure valid Frontend URL (handles missing https://)
+const getFrontendUrl = () => {
+  let url = process.env.FRONTEND_URL || "http://localhost:5173";
+  if (!url.startsWith("http")) {
+    url = `https://${url}`;
+  }
+  return url.replace(/\/$/, "");
+};
+
 // Google OAuth - Callback
-router.get("/google/callback", 
-  passport.authenticate("google", { 
-    session: false,
-    failureRedirect: `${process.env.FRONTEND_URL}?error=auth_failed` 
-  }),
+router.get("/google/callback",
+  (req, res, next) => {
+    passport.authenticate("google", {
+      session: false,
+      failureRedirect: `${getFrontendUrl()}?error=auth_failed`
+    })(req, res, next);
+  },
   (req, res) => {
+    const frontendUrl = getFrontendUrl();
     try {
       // Generate JWT token
       const token = jwt.sign(
@@ -36,10 +48,10 @@ router.get("/google/callback",
       );
 
       // Redirect to frontend with token
-      res.redirect(`${process.env.FRONTEND_URL}?token=${token}`);
+      res.redirect(`${frontendUrl}?token=${token}`);
     } catch (err) {
       console.error("Error in Google callback:", err);
-      res.redirect(`${process.env.FRONTEND_URL}?error=server_error`);
+      res.redirect(`${frontendUrl}?error=server_error`);
     }
   }
 );
@@ -48,16 +60,16 @@ router.get("/google/callback",
 router.get("/me", async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: "No token provided" });
     }
 
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, JWT_SECRET);
-    
+
     const user = await User.findByPk(decoded.userId);
-    
+
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
