@@ -15,25 +15,25 @@ export default function Navbar({ setCurrentPage, onShowAuthModal }) {
 
   return (
     <>
-      <nav className="w-full flex items-center justify-between py-6 px-10">
+      <nav className="w-full flex items-center justify-between py-4 sm:py-6 px-4 sm:px-6 lg:px-10">
         <div 
           onClick={() => setCurrentPage("home")}
-          className="text-white text-4xl font-bold tracking-tight font-mono cursor-pointer hover:text-gray-300 transition"
+          className="text-white text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight font-mono cursor-pointer hover:text-gray-300 transition"
         >
           cac-url
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           {/* Profile Icon */}
-          <div className="flex items-center gap-3 px-4 py-2 rounded-full border border-gray-500/30 bg-slate-900/20">
-            <FiUser size={20} className="text-gray-400" />
+          <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-gray-700/50 bg-black shadow-lg shadow-black/50">
+            <FiUser size={18} className="text-gray-400 sm:w-5 sm:h-5" />
             
             {user ? (
-              <div className="flex items-center gap-3">
-                <span className="text-gray-300 text-sm">{user.email}</span>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <span className="text-gray-300 text-xs sm:text-sm max-w-[100px] sm:max-w-none truncate">{user.email}</span>
                 <button
                   onClick={handleLogout}
-                  className="text-gray-400 hover:text-red-400 transition text-sm font-semibold"
+                  className="text-gray-400 hover:text-red-400 transition text-xs sm:text-sm font-semibold"
                 >
                   Logout
                 </button>
@@ -44,7 +44,7 @@ export default function Navbar({ setCurrentPage, onShowAuthModal }) {
                   setIsLoginMode(true);
                   setShowAuthModal(true);
                 }}
-                className="text-gray-300 hover:text-white transition text-sm font-semibold"
+                className="text-gray-300 hover:text-white transition text-xs sm:text-sm font-semibold whitespace-nowrap"
               >
                 Sign In
               </button>

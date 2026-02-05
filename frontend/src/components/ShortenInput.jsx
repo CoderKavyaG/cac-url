@@ -102,7 +102,7 @@ export default function ShortenInput() {
           <button
             onClick={handleShorten}
             disabled={loading}
-            className="w-full sm:w-auto bg-white text-gray-900 font-medium px-6 md:px-8 py-3 md:py-4 rounded-full shadow-md hover:scale-[.99] transition-transform disabled:opacity-50 whitespace-nowrap text-sm md:text-base"
+            className="w-full sm:w-auto bg-white text-gray-900 font-medium px-6 md:px-8 py-3 md:py-4 rounded-full shadow-md hover:scale-[.99] active:bg-purple-100 active:shadow-purple-500/30 active:shadow-lg transition-all disabled:opacity-50 whitespace-nowrap text-sm md:text-base"
           >
             {loading ? "..." : "Shorten →"}
           </button>
@@ -124,27 +124,27 @@ export default function ShortenInput() {
 
         {/* Short URL Display */}
         {shortUrl && (
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 md:gap-3 bg-slate-900/40 border border-gray-500/20 rounded-2xl p-3 md:p-4 animate-fadeIn">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 md:gap-3 bg-black border border-gray-800 rounded-2xl p-3 md:p-4 animate-fadeIn shadow-lg shadow-purple-900/10">
             <div className="flex-1 min-w-0">
               <p className="text-xs text-gray-400 mb-1">Your shortened link:</p>
               <a
                 href={shortUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="text-white font-mono text-xs md:text-lg hover:text-gray-300 transition break-all"
+                className="text-purple-300 font-mono text-xs md:text-lg hover:text-purple-200 transition break-all"
               >
                 {shortUrl}
               </a>
             </div>
             <button
               onClick={handleCopy}
-              className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white px-3 md:px-4 py-2 md:py-2 rounded-lg text-xs md:text-sm font-medium transition border border-gray-500/20 whitespace-nowrap"
+              className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white px-3 md:px-4 py-2 md:py-2 rounded-lg text-xs md:text-sm font-medium transition border border-gray-800 whitespace-nowrap"
             >
               📋 Copy
             </button>
             <button
               onClick={() => setShowShareModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap"
+              className="bg-purple-900/50 hover:bg-purple-900/70 text-purple-200 px-4 py-2 rounded-lg text-sm font-medium transition border border-purple-500/30 whitespace-nowrap"
             >
               🔗 Share
             </button>

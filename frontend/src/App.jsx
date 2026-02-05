@@ -49,11 +49,11 @@ function App() {
             />
           )}
 
-          {/* Page Content - Shifted right to account for fixed sidebar */}
-          <div className="flex-1 px-8 py-8 overflow-y-auto pb-20 md:pb-8 md:ml-0">
+          {/* Page Content - Responsive padding for sidebar and mobile nav */}
+          <div className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 overflow-y-auto pb-24 md:pb-8 md:ml-16 lg:ml-20">
             {/* Home / Landing Page */}
             {currentPage === "home" && (
-              <main className="px-6 py-8">
+              <main className="px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
                 <Landing />
               </main>
             )}

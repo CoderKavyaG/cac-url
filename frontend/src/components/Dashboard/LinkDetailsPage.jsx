@@ -95,7 +95,7 @@ export default function LinkDetailsPage({ link, onBack }) {
       <div className="flex items-center gap-4 mb-8">
         <button
           onClick={onBack}
-          className="p-2 hover:bg-slate-800 rounded-lg transition flex items-center justify-center text-gray-400 hover:text-white"
+          className="p-2 hover:bg-purple-900/20 rounded-lg transition flex items-center justify-center text-gray-400 hover:text-purple-300"
           title="Go back"
         >
           <FiArrowLeft size={24} />
@@ -107,7 +107,7 @@ export default function LinkDetailsPage({ link, onBack }) {
       </div>
 
       {/* Link Info Card */}
-      <div className="bg-slate-900/40 border border-gray-500/10 rounded-2xl p-8 mb-8">
+      <div className="bg-black border border-gray-800 rounded-2xl p-8 mb-8 shadow-2xl shadow-purple-900/10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
             <p className="text-sm text-gray-400 uppercase tracking-wider mb-2">Original Link</p>
@@ -121,8 +121,8 @@ export default function LinkDetailsPage({ link, onBack }) {
                 onClick={handleCopy}
                 className={`p-2 rounded-lg transition ${
                   copied
-                    ? 'bg-green-600/30 text-green-400'
-                    : 'bg-slate-700 hover:bg-slate-600 text-white'
+                    ? 'bg-green-900/30 text-green-400'
+                    : 'bg-gray-900 hover:bg-gray-800 text-white'
                 }`}
               >
                 <FiCopy size={16} />
@@ -131,10 +131,10 @@ export default function LinkDetailsPage({ link, onBack }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-gray-500/10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-gray-800">
           <div>
             <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Total Clicks</p>
-            <p className="text-3xl font-bold text-white">{link.clicks || 0}</p>
+            <p className="text-3xl font-bold text-purple-300">{link.clicks || 0}</p>
           </div>
           <div>
             <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Created</p>
@@ -163,7 +163,7 @@ export default function LinkDetailsPage({ link, onBack }) {
       <div className="mt-8">
         <button
           onClick={onBack}
-          className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2 rounded-lg font-medium transition border border-gray-500/20"
+          className="bg-purple-900/50 hover:bg-purple-900/70 text-purple-200 px-6 py-2 rounded-lg font-medium transition border border-purple-500/30"
         >
           ← Back to Dashboard
         </button>

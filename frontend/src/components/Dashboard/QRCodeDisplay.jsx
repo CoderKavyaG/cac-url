@@ -27,12 +27,12 @@ const QRCodeDisplay = ({ shortUrl, shortId, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-gray-500/40 rounded-2xl p-8 max-w-sm w-full shadow-2xl">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-black border border-gray-800 rounded-2xl p-8 max-w-sm w-full shadow-2xl shadow-purple-900/20 relative">
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition"
+                    className="absolute top-4 right-4 p-2 text-gray-400 hover:text-purple-300 hover:bg-purple-900/20 rounded-lg transition"
                 >
                     <FiX size={20} />
                 </button>
@@ -52,7 +52,7 @@ const QRCodeDisplay = ({ shortUrl, shortId, onClose }) => {
                 </div>
 
                 {/* URL Display */}
-                <div className="mb-6 p-3 bg-slate-900/60 rounded-lg border border-gray-500/30">
+                <div className="mb-6 p-3 bg-gray-900 rounded-lg border border-gray-800">
                     <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Short URL</p>
                     <p className="text-sm text-white font-mono break-all">{shortUrl}</p>
                 </div>
@@ -60,7 +60,7 @@ const QRCodeDisplay = ({ shortUrl, shortId, onClose }) => {
                 {/* Download Button */}
                 <button
                     onClick={downloadQR}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition mb-3"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-900/50 hover:bg-purple-900/70 text-purple-200 rounded-lg font-semibold transition border border-purple-500/30 mb-3"
                 >
                     <FiDownload size={18} />
                     Download QR Code
@@ -69,7 +69,7 @@ const QRCodeDisplay = ({ shortUrl, shortId, onClose }) => {
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="w-full px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium transition border border-gray-500/20"
+                    className="w-full px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg font-medium transition border border-gray-800"
                 >
                     Close
                 </button>

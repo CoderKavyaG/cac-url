@@ -26,21 +26,21 @@ const ShareModal = ({ url, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-900 border border-gray-500/30 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-black border border-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl shadow-purple-900/20">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold text-white">Share Link</h2>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-slate-800 rounded-lg transition text-gray-400 hover:text-white"
+                        className="p-2 hover:bg-purple-900/20 rounded-lg transition text-gray-400 hover:text-purple-300"
                     >
                         <FiX size={20} />
                     </button>
                 </div>
 
                 {/* URL Display */}
-                <div className="bg-slate-800/50 border border-gray-500/20 rounded-lg p-4 mb-6">
+                <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 mb-6">
                     <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Your Short Link</p>
                     <div className="flex items-center gap-2">
                         <p className="text-white font-mono break-all text-sm flex-1 min-w-0">{shortUrl}</p>
@@ -48,8 +48,8 @@ const ShareModal = ({ url, onClose }) => {
                             onClick={handleCopy}
                             className={`p-2 rounded-lg transition flex-shrink-0 ${
                                 copied
-                                    ? 'bg-green-600/30 text-green-400'
-                                    : 'bg-slate-700 hover:bg-slate-600 text-white'
+                                    ? 'bg-green-900/30 text-green-400'
+                                    : 'bg-gray-800 hover:bg-gray-700 text-white'
                             }`}
                             title="Copy link"
                         >
@@ -63,14 +63,14 @@ const ShareModal = ({ url, onClose }) => {
                 <div className="space-y-3">
                     <button
                         onClick={() => handleShare('twitter')}
-                        className="w-full flex items-center justify-center gap-2 bg-black hover:bg-gray-900 text-white py-3 px-4 rounded-lg font-semibold transition border border-gray-700"
+                        className="w-full flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-800 text-white py-3 px-4 rounded-lg font-semibold transition border border-gray-800"
                     >
                         <FaXTwitter size={18} />
                         Share on X
                     </button>
                     <button
                         onClick={() => handleShare('linkedin')}
-                        className="w-full flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 text-white py-3 px-4 rounded-lg font-semibold transition"
+                        className="w-full flex items-center justify-center gap-2 bg-purple-900/50 hover:bg-purple-900/70 text-purple-200 py-3 px-4 rounded-lg font-semibold transition border border-purple-500/30"
                     >
                         <FaLinkedin size={18} />
                         Share on LinkedIn
@@ -80,7 +80,7 @@ const ShareModal = ({ url, onClose }) => {
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="w-full mt-6 bg-slate-700 hover:bg-slate-600 text-white py-2 px-4 rounded-lg font-medium transition text-sm"
+                    className="w-full mt-6 bg-gray-900 hover:bg-gray-800 text-white py-2 px-4 rounded-lg font-medium transition border border-gray-800 text-sm"
                 >
                     Done
                 </button>

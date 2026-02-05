@@ -60,11 +60,11 @@ export default function SignUpModal({ onClose, isLogin = false }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div className="bg-slate-900/60 border border-gray-500/30 rounded-2xl shadow-lg p-8 w-96 relative">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm p-4">
+      <div className="bg-black border border-gray-800 rounded-2xl shadow-2xl shadow-purple-900/20 p-8 w-full max-w-sm relative">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl"
+          className="absolute top-4 right-4 text-gray-400 hover:text-purple-300 text-2xl transition"
         >
           ✕
         </button>
@@ -79,7 +79,7 @@ export default function SignUpModal({ onClose, isLogin = false }) {
         </p>
 
         {error && (
-          <div className="bg-red-950/30 text-red-300 px-4 py-2 rounded mb-4 text-sm border border-red-500/20">
+          <div className="bg-red-950/30 text-red-300 px-4 py-2 rounded mb-4 text-sm border border-red-500/30">
             {error}
           </div>
         )}
@@ -91,7 +91,7 @@ export default function SignUpModal({ onClose, isLogin = false }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
-            className="w-full bg-slate-800/40 border border-gray-500/20 text-white placeholder-gray-500 px-4 py-2 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-gray-400/50 transition disabled:opacity-50"
+            className="w-full bg-gray-900 border border-gray-800 text-white placeholder-gray-500 px-4 py-3 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition disabled:opacity-50"
           />
 
           <input
@@ -100,7 +100,7 @@ export default function SignUpModal({ onClose, isLogin = false }) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
-            className="w-full bg-slate-800/40 border border-gray-500/20 text-white placeholder-gray-500 px-4 py-2 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-gray-400/50 transition disabled:opacity-50"
+            className="w-full bg-gray-900 border border-gray-800 text-white placeholder-gray-500 px-4 py-3 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition disabled:opacity-50"
           />
 
           {!isLoginMode && (
@@ -110,14 +110,14 @@ export default function SignUpModal({ onClose, isLogin = false }) {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               disabled={loading}
-              className="w-full bg-slate-800/40 border border-gray-500/20 text-white placeholder-gray-500 px-4 py-2 rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-gray-400/50 transition disabled:opacity-50"
+              className="w-full bg-gray-900 border border-gray-800 text-white placeholder-gray-500 px-4 py-3 rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition disabled:opacity-50"
             />
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white font-semibold py-2 rounded-lg transition border border-gray-500/20 mb-3"
+            className="w-full bg-purple-900/50 hover:bg-purple-900/70 disabled:bg-gray-900 text-purple-200 font-semibold py-3 rounded-lg transition border border-purple-500/30 mb-3"
           >
             {loading 
               ? (isLoginMode ? "Logging in..." : "Creating account...") 
@@ -133,7 +133,7 @@ export default function SignUpModal({ onClose, isLogin = false }) {
               setPassword("");
               setConfirmPassword("");
             }}
-            className="w-full text-gray-400 hover:text-gray-300 text-sm py-2"
+            className="w-full text-gray-400 hover:text-purple-300 text-sm py-2 transition"
           >
             {isLoginMode 
               ? "Don't have an account? Sign up" 

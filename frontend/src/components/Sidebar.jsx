@@ -30,11 +30,11 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, user, onSho
   return (
     <>
       {/* Desktop Sidebar - Fixed on left side, vertically centered */}
-      <div className="hidden md:block fixed left-8 top-1/2 -translate-y-1/2 z-50">
+      <div className="hidden lg:block fixed left-6 top-1/2 -translate-y-1/2 z-50">
         {/* Sidebar Container */}
-        <div className="bg-slate-900/40 border border-gray-500/20 backdrop-blur-sm rounded-2xl p-6 flex flex-col items-center gap-8 shadow-xl">
+        <div className="bg-black border border-gray-800/60 backdrop-blur-md rounded-2xl p-5 flex flex-col items-center gap-6 shadow-2xl shadow-purple-900/20">
           {/* Navigation Icons */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-5">
             {navItems.map((item) => {
               const IconComponent = item.icon;
               const isActive = currentPage === item.name;
@@ -45,33 +45,33 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, user, onSho
                     onClick={() => handleNavClick(item)}
                     disabled={item.locked}
                     className={`
-                      w-12 h-12 rounded-lg transition-all duration-200 flex items-center justify-center relative
+                      w-11 h-11 rounded-xl transition-all duration-200 flex items-center justify-center relative
                       ${item.locked ? 'cursor-not-allowed' : 'hover:scale-105'}
                       ${
                         isActive
-                          ? 'bg-gray-700/50 text-gray-100 border border-gray-400/30'
+                          ? 'bg-purple-900/40 text-purple-300 border border-purple-500/40 shadow-lg shadow-purple-500/20'
                           : item.locked
                           ? 'bg-transparent text-gray-600 border border-transparent'
-                          : 'bg-transparent text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-400/20'
+                          : 'bg-transparent text-gray-400 hover:text-purple-300 border border-transparent hover:border-purple-500/30'
                       }
                     `}
                     onMouseEnter={() => setHoveredIcon(item.name)}
                     onMouseLeave={() => setHoveredIcon(null)}
                     title={item.label}
                   >
-                    <IconComponent size={22} />
+                    <IconComponent size={20} />
                     
                     {/* Lock Overlay */}
                     {item.locked && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <FiLock size={20} className="text-red-400/80" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-xl">
+                        <FiLock size={14} className="text-red-500" />
                       </div>
                     )}
                   </button>
 
                   {/* Tooltip */}
                   {hoveredIcon === item.name && (
-                    <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-black/80 text-gray-200 text-xs px-3 py-1 rounded-lg whitespace-nowrap pointer-events-none animate-fadeIn border border-gray-400/20">
+                    <div className="absolute left-16 top-1/2 -translate-y-1/2 bg-black text-purple-200 text-xs px-3 py-1.5 rounded-lg whitespace-nowrap pointer-events-none animate-fadeIn border border-purple-500/30 shadow-lg shadow-purple-500/10">
                       {item.locked ? 'Sign In to unlock' : item.label}
                     </div>
                   )}
@@ -81,24 +81,24 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, user, onSho
           </div>
 
           {/* Divider */}
-          <div className="w-full h-px bg-gray-500/20"></div>
+          <div className="w-full h-px bg-gray-800"></div>
 
           {/* Logout Button - Only show when logged in */}
           {user && (
             <div className="relative group">
               <button
                 onClick={handleLogoutClick}
-                className="w-12 h-12 rounded-lg bg-transparent text-gray-400 hover:text-gray-200 transition-all duration-200 flex items-center justify-center border border-transparent hover:border-gray-400/20 hover:scale-105"
+                className="w-11 h-11 rounded-xl bg-transparent text-gray-400 hover:text-purple-300 transition-all duration-200 flex items-center justify-center border border-transparent hover:border-purple-500/30 hover:scale-105"
                 title="Logout"
                 onMouseEnter={() => setHoveredIcon('logout')}
                 onMouseLeave={() => setHoveredIcon(null)}
               >
-                <FiLogOut size={22} />
+                <FiLogOut size={20} />
               </button>
 
               {/* Tooltip */}
               {hoveredIcon === 'logout' && (
-                <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-black/80 text-gray-200 text-xs px-3 py-1 rounded-lg whitespace-nowrap pointer-events-none animate-fadeIn border border-gray-400/20">
+                <div className="absolute left-16 top-1/2 -translate-y-1/2 bg-black text-purple-200 text-xs px-3 py-1.5 rounded-lg whitespace-nowrap pointer-events-none animate-fadeIn border border-purple-500/30 shadow-lg shadow-purple-500/10">
                   Logout
                 </div>
               )}
@@ -107,9 +107,9 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, user, onSho
         </div>
       </div>
 
-      {/* Mobile Bottom Navigation Bar - Fixed at bottom */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/50 border-t border-gray-500/20 backdrop-blur-sm z-50">
-        <div className="flex items-center justify-around px-2 py-3">
+      {/* Tablet Sidebar - Smaller, positioned left */}
+      <div className="hidden md:block lg:hidden fixed left-4 top-1/2 -translate-y-1/2 z-50">
+        <div className="bg-black border border-gray-800/60 backdrop-blur-md rounded-xl p-3 flex flex-col items-center gap-4 shadow-2xl shadow-purple-900/20">
           {navItems.map((item) => {
             const IconComponent = item.icon;
             const isActive = currentPage === item.name;
@@ -120,57 +120,113 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, user, onSho
                 onClick={() => handleNavClick(item)}
                 disabled={item.locked}
                 className={`
-                  flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-all duration-200 flex-1
-                  ${item.locked ? 'cursor-not-allowed' : ''}
+                  w-10 h-10 rounded-lg transition-all duration-200 flex items-center justify-center relative
+                  ${item.locked ? 'cursor-not-allowed' : 'active:scale-95'}
                   ${
                     isActive
-                      ? 'bg-gray-700/50 text-gray-100'
+                      ? 'bg-purple-900/40 text-purple-300 shadow-md shadow-purple-500/20'
                       : item.locked
                       ? 'text-gray-600'
-                      : 'text-gray-400 hover:text-gray-200'
+                      : 'text-gray-400 hover:text-purple-300'
                   }
                 `}
-                title={item.label}
               >
-                <div className="relative">
-                  <IconComponent size={20} />
-                  {item.locked && <FiLock size={10} className="absolute -top-1 -right-1 text-red-400" />}
-                </div>
-                <span className="text-xs font-medium">{item.label}</span>
+                <IconComponent size={18} />
+                {item.locked && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg">
+                    <FiLock size={12} className="text-red-500" />
+                  </div>
+                )}
               </button>
             );
           })}
-
-          {/* Logout Button - Mobile */}
+          
           {user && (
-            <button
-              onClick={handleLogoutClick}
-              className="flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-gray-400 hover:text-gray-200 transition-all duration-200 flex-1"
-              title="Logout"
-            >
-              <FiLogOut size={20} />
-              <span className="text-xs font-medium">Logout</span>
-            </button>
+            <>
+              <div className="w-6 h-px bg-gray-800"></div>
+              <button
+                onClick={handleLogoutClick}
+                className="w-10 h-10 rounded-lg text-gray-400 hover:text-purple-300 transition-all duration-200 flex items-center justify-center active:scale-95"
+              >
+                <FiLogOut size={18} />
+              </button>
+            </>
           )}
+        </div>
+      </div>
+
+      {/* Mobile Bottom Navigation Bar - Fixed at bottom with safe area */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+        <div className="bg-black border-t border-gray-800/80 shadow-2xl shadow-purple-900/30">
+          <div className="flex items-stretch justify-around max-w-md mx-auto">
+            {navItems.map((item) => {
+              const IconComponent = item.icon;
+              const isActive = currentPage === item.name;
+
+              return (
+                <button
+                  key={item.name}
+                  onClick={() => handleNavClick(item)}
+                  disabled={item.locked}
+                  className={`
+                    flex flex-col items-center justify-center gap-1 py-3 px-4 flex-1 transition-all duration-200 min-h-[64px] relative
+                    ${item.locked ? 'cursor-not-allowed' : 'active:bg-purple-900/20'}
+                    ${isActive ? 'text-purple-400' : 'text-gray-500'}
+                  `}
+                >
+                  {/* Active background glow */}
+                  {isActive && (
+                    <div className="absolute inset-x-2 top-1 bottom-1 bg-purple-900/30 rounded-xl border border-purple-500/30"></div>
+                  )}
+                  <div className="relative z-10">
+                    <IconComponent size={22} strokeWidth={isActive ? 2.5 : 2} />
+                    {item.locked && (
+                      <div className="absolute -top-1 -right-2 bg-black rounded-full p-0.5">
+                        <FiLock size={10} className="text-red-500" />
+                      </div>
+                    )}
+                  </div>
+                  <span className={`text-[10px] font-medium relative z-10 ${isActive ? 'text-purple-300' : 'text-gray-500'}`}>
+                    {item.label}
+                  </span>
+                  {/* Active indicator line */}
+                  {isActive && <div className="w-4 h-0.5 rounded-full bg-purple-500 mt-0.5 relative z-10"></div>}
+                </button>
+              );
+            })}
+
+            {/* Logout Button - Mobile */}
+            {user && (
+              <button
+                onClick={handleLogoutClick}
+                className="flex flex-col items-center justify-center gap-1 py-3 px-4 flex-1 text-gray-500 transition-all duration-200 min-h-[64px] active:bg-purple-900/20"
+              >
+                <FiLogOut size={22} strokeWidth={2} />
+                <span className="text-[10px] font-medium">Logout</span>
+              </button>
+            )}
+          </div>
+          {/* Safe area padding for notched phones */}
+          <div className="h-safe-area-inset-bottom bg-black"></div>
         </div>
       </div>
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 backdrop-blur-sm">
-          <div className="bg-slate-900/60 border border-gray-500/30 rounded-2xl p-8 w-96 mx-4">
-            <h3 className="text-gray-100 text-lg font-bold mb-4">Confirm Logout</h3>
-            <p className="text-gray-400 mb-6">Are you sure you want to logout?</p>
-            <div className="flex gap-4">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] backdrop-blur-sm p-4">
+          <div className="bg-black border border-gray-800 rounded-2xl p-6 sm:p-8 w-full max-w-sm mx-auto shadow-2xl shadow-purple-900/20">
+            <h3 className="text-white text-lg font-bold mb-3">Confirm Logout</h3>
+            <p className="text-gray-400 mb-6 text-sm sm:text-base">Are you sure you want to logout?</p>
+            <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 bg-slate-800 hover:bg-slate-700 text-gray-200 px-4 py-2 rounded-lg transition border border-gray-500/20"
+                className="flex-1 bg-gray-900 hover:bg-gray-800 text-gray-200 px-4 py-2.5 rounded-lg font-medium transition border border-gray-700 text-sm sm:text-base"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmLogout}
-                className="flex-1 bg-slate-700 hover:bg-slate-600 text-gray-100 px-4 py-2 rounded-lg transition border border-gray-500/20"
+                className="flex-1 bg-purple-900/50 hover:bg-purple-900/70 text-purple-200 px-4 py-2.5 rounded-lg font-medium transition border border-purple-500/30 text-sm sm:text-base"
               >
                 Logout
               </button>
