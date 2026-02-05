@@ -47,6 +47,17 @@ const recordClick = async (url, req) => {
     else browser = 'Other';
   }
 
+  // Check for Global Privacy Control (common in Brave)
+  // Brave disguises itself as Chrome, but often sends Sec-GPC
+  if ((browser === 'Chrome' || browser === 'Other') && req.headers['sec-gpc'] === '1') {
+    browser = 'Brave / Privacy';
+  }
+
+  // Ensure country code is valid for frontend (geoip returns 2-letter code)
+  // If IP is localhost or lookup fails, geo is {}.
+  const countryCode = geo.country || 'XX';
+  const city = geo.city || 'Unknown Location';
+
   clickHistory.push({
     timestamp: new Date().toISOString(),
     ipAddress: ip || 'Unknown',
@@ -55,8 +66,8 @@ const recordClick = async (url, req) => {
     browser: browser,
     os: uaResult.os.name || 'Unknown',
     device: uaResult.device.type || 'Desktop', // 'console', 'mobile', 'tablet', 'smarttv', 'wearable', 'embedded'
-    country: geo.country || 'Unknown',
-    city: geo.city || 'Unknown',
+    country: countryCode,
+    city: city,
     region: geo.region || 'Unknown'
   });
 
