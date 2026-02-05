@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-const AuthContext = createContext();
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { authApi, urlApi } from "../services/api";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -20,50 +20,36 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  // Transfer anonymous URLs to user account
+  const transferAnonymousUrls = useCallback(async (authToken) => {
+    const anonymousUrls = localStorage.getItem("anonymousUrls");
+    if (!anonymousUrls) return;
+
+    try {
+      const urls = JSON.parse(anonymousUrls);
+      if (urls.length > 0) {
+        // Temporarily set the token for the API call
+        localStorage.setItem("authToken", authToken);
+        await urlApi.transfer(urls);
+        localStorage.removeItem("anonymousUrls");
+      }
+    } catch (err) {
+      console.error("Error transferring anonymous URLs:", err);
+    }
+  }, []);
+
   // Register function
   const register = async (email, password, confirmPassword) => {
     try {
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, confirmPassword }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Registration failed");
-      }
-
-      const data = await response.json();
+      const data = await authApi.register(email, password, confirmPassword);
+      
       setToken(data.token);
       setUser(data.user);
-
-      // Save to localStorage
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("authUser", JSON.stringify(data.user));
 
-      // Transfer anonymous URLs to user account
-      const anonymousUrls = localStorage.getItem("anonymousUrls");
-      if (anonymousUrls) {
-        try {
-          const urls = JSON.parse(anonymousUrls);
-          if (urls.length > 0) {
-            // Send anonymous URLs to backend for transfer
-            await fetch(`${API_URL}/urls/transfer`, {
-              method: "POST",
-              headers: {
-                "Authorization": `Bearer ${data.token}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ urls }),
-            });
-            // Clear anonymous URLs after successful transfer
-            localStorage.removeItem("anonymousUrls");
-          }
-        } catch (err) {
-          console.error("Error transferring anonymous URLs:", err);
-        }
-      }
+      // Transfer anonymous URLs
+      await transferAnonymousUrls(data.token);
 
       return { success: true };
     } catch (err) {
@@ -74,47 +60,15 @@ export const AuthProvider = ({ children }) => {
   // Login function
   const login = async (email, password) => {
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Login failed");
-      }
-
-      const data = await response.json();
+      const data = await authApi.login(email, password);
+      
       setToken(data.token);
       setUser(data.user);
-
-      // Save to localStorage
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("authUser", JSON.stringify(data.user));
 
-      // Transfer anonymous URLs to user account
-      const anonymousUrls = localStorage.getItem("anonymousUrls");
-      if (anonymousUrls) {
-        try {
-          const urls = JSON.parse(anonymousUrls);
-          if (urls.length > 0) {
-            // Send anonymous URLs to backend for transfer
-            await fetch(`${API_URL}/urls/transfer`, {
-              method: "POST",
-              headers: {
-                "Authorization": `Bearer ${data.token}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ urls }),
-            });
-            // Clear anonymous URLs after successful transfer
-            localStorage.removeItem("anonymousUrls");
-          }
-        } catch (err) {
-          console.error("Error transferring anonymous URLs:", err);
-        }
-      }
+      // Transfer anonymous URLs
+      await transferAnonymousUrls(data.token);
 
       return { success: true };
     } catch (err) {
@@ -123,18 +77,22 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Logout function
-  const logout = () => {
+  const logout = useCallback(() => {
     setToken(null);
     setUser(null);
     localStorage.removeItem("authToken");
     localStorage.removeItem("authUser");
-  };
+  }, []);
+
+  // Check if user is authenticated
+  const isAuthenticated = !!token && !!user;
 
   return (
     <AuthContext.Provider value={{ 
       user, 
       token, 
       loading, 
+      isAuthenticated,
       login,
       register,
       logout

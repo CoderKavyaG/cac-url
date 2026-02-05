@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { urlApi } from '../../services/api';
 import { FiCopy, FiTrash2, FiEye, FiLock, FiRefreshCw, FiDownload, FiShare2 } from 'react-icons/fi';
 import QRCodeDisplay from './QRCodeDisplay';
 import ShareModal from '../ShareModal';
@@ -12,11 +13,9 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(null);
-  const [aliasInput, setAliasInput] = useState({});
-  const [creatingAlias, setCreatingAlias] = useState({});
-  const [sortBy, setSortBy] = useState('latest'); // latest, oldest, mostClicks, leastClicks
-  const [showQR, setShowQR] = useState(null); // null or shortId of URL to show QR for
-  const [showShare, setShowShare] = useState(null); // null or url object to show share modal for
+  const [sortBy, setSortBy] = useState('latest');
+  const [showQR, setShowQR] = useState(null);
+  const [showShare, setShowShare] = useState(null);
   const [daysRemaining, setDaysRemaining] = useState({});
 
   // If not logged in, show locked message
@@ -39,12 +38,26 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
     );
   }
 
+  const fetchUrls = useCallback(async () => {
+    if (!user || !token) return;
+    
+    try {
+      setLoading(true);
+      setError('');
+      const response = await urlApi.getAll();
+      setUrls(response.data?.urls || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, token]);
+
   useEffect(() => {
-    // Load URLs when component mounts or when user/token changes
     if (user && token) {
       fetchUrls();
     }
-  }, [user, token]);
+  }, [user, token, fetchUrls]);
 
   // Update expiration countdown timer every minute
   useEffect(() => {
@@ -63,40 +76,9 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
     };
 
     updateCountdown();
-    const interval = setInterval(updateCountdown, 60000); // Update every minute
+    const interval = setInterval(updateCountdown, 60000);
     return () => clearInterval(interval);
   }, [urls]);
-
-  const fetchUrls = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_URL}/urls`, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error("Session expired. Please log in again.");
-        }
-        throw new Error("Failed to fetch URLs");
-      }
-
-      const data = await response.json();
-      console.log('Fetched URLs with data:', data.urls);
-      setUrls(data.urls || []);
-      setError('');
-      setSuccess('');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
 
   const handleCopy = (url) => {
     const urlToCopy = url.customAlias 
@@ -109,75 +91,14 @@ export default function DashboardPage({ setCurrentPage, onViewLink, onShowAuthMo
   };
 
   const handleDelete = async (shortId) => {
-    if (!window.confirm('Delete this URL? This action cannot be undone.')) return;
+    if (!window.confirm('Delete this URL? It can be recovered within 30 days.')) return;
+    
     try {
-      const response = await fetch(`${API_URL}/urls/${shortId}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete URL");
-      }
-
+      await urlApi.delete(shortId);
       setUrls(urls.filter(url => url.shortId !== shortId));
       setError('');
     } catch (err) {
       setError(err.message);
-    }
-  };
-
-  const handleCreateAlias = async (shortId) => {
-    const alias = aliasInput[shortId];
-    
-    if (!alias) {
-      setError("Please enter a custom alias");
-      return;
-    }
-
-    if (!/^[a-zA-Z0-9_-]+$/.test(alias)) {
-      setError("Alias can only contain letters, numbers, hyphens, and underscores");
-      return;
-    }
-
-    if (alias.length < 3) {
-      setError("Alias must be at least 3 characters");
-      return;
-    }
-
-    setCreatingAlias(prev => ({ ...prev, [shortId]: true }));
-    setError("");
-
-    try {
-      const response = await fetch(`${API_URL}/urls/${shortId}/alias`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ customAlias: alias }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create alias");
-      }
-
-      // Update the URL with the new alias
-      setUrls(urls.map(url => 
-        url.shortId === shortId 
-          ? { ...url, customAlias: alias }
-          : url
-      ));
-
-      setAliasInput(prev => ({ ...prev, [shortId]: "" }));
-    } catch (err) {
-      setError(err.message || "Failed to create alias");
-    } finally {
-      setCreatingAlias(prev => ({ ...prev, [shortId]: false }));
     }
   };
 

@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { urlApi } from "../services/api";
 import ShareModal from "./ShareModal";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export default function ShortenInput() {
   const [url, setUrl] = useState("");
@@ -12,7 +11,7 @@ export default function ShortenInput() {
   const [loading, setLoading] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [currentUrlData, setCurrentUrlData] = useState(null);
-  const { token, user } = useAuth();
+  const { user } = useAuth();
 
   const isValidUrl = (value) => {
     try {
@@ -24,6 +23,9 @@ export default function ShortenInput() {
   };
 
   const handleShorten = async () => {
+    setError("");
+    setSuccess("");
+
     if (!url) {
       setError("Please enter a URL");
       return;
@@ -37,51 +39,31 @@ export default function ShortenInput() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/shorten`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { "Authorization": `Bearer ${token}` }),
-        },
-        body: JSON.stringify({ 
-          originalUrl: url,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to shorten URL");
-      }
-
-      const data = await response.json();
-      setShortUrl(data.shortUrl);
+      const data = await urlApi.shorten(url);
+      
+      setShortUrl(data.data.shortUrl);
       setCurrentUrlData({
-        shortId: data.shortId,
-        customAlias: data.customAlias,
-        originalUrl: url
+        shortId: data.data.shortId,
+        customAlias: data.data.customAlias,
+        originalUrl: url,
+        shortUrl: data.data.shortUrl,
       });
       setSuccess("✓ Link shortened successfully!");
-      setError("");
       setUrl("");
 
       // If user is not logged in, save to localStorage
       if (!user) {
         const newAnonymousUrl = {
           originalUrl: url,
-          shortId: data.shortId,
-          shortUrl: data.shortUrl,
+          shortId: data.data.shortId,
+          shortUrl: data.data.shortUrl,
           clicks: 0,
           createdAt: new Date().toISOString(),
         };
 
-        // Get existing anonymous URLs
         const existingUrls = localStorage.getItem("anonymousUrls");
         const anonymousUrls = existingUrls ? JSON.parse(existingUrls) : [];
-        
-        // Add new URL
         anonymousUrls.unshift(newAnonymousUrl);
-        
-        // Store back (keep last 50 URLs)
         localStorage.setItem("anonymousUrls", JSON.stringify(anonymousUrls.slice(0, 50)));
       }
     } catch (err) {
@@ -96,8 +78,8 @@ export default function ShortenInput() {
     if (!shortUrl) return;
     try {
       await navigator.clipboard.writeText(shortUrl);
-      setError("✓ Copied to clipboard");
-      setTimeout(() => setError(""), 2000);
+      setSuccess("✓ Copied to clipboard!");
+      setTimeout(() => setSuccess(""), 2000);
     } catch (e) {
       setError("Copy failed");
     }
@@ -129,12 +111,12 @@ export default function ShortenInput() {
         {/* Error / Success Message */}
         <div className="text-sm min-h-[20px]">
           {error && (
-            <span className="text-red-400 flex items-center gap-2">
+            <span className="text-red-400 flex items-center justify-center gap-2">
               <span className="text-lg">⚠️</span> {error}
             </span>
           )}
           {success && (
-            <span className="text-green-400 flex items-center gap-2">
+            <span className="text-green-400 flex items-center justify-center gap-2">
               <span className="text-lg">✓</span> {success}
             </span>
           )}

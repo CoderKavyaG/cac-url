@@ -23,9 +23,10 @@ function App() {
   }, [user]);
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-r from-stone-900 via-neutral-800 to-gray-900 text-white">
-      {/* Backdrop blur effect */}
-      <div className="backdrop-blur-sm bg-gradient-to-b from-black/10 via-black/5 to-transparent min-h-screen w-full fixed inset-0 pointer-events-none"></div>
+    <div className="min-h-screen w-full bg-black text-white">
+      {/* Neon purple glow from top */}
+      <div className="neon-glow-top"></div>
+      <div className="neon-glow-secondary"></div>
 
       {/* Content wrapper with sidebar and main area */}
       <div className="relative z-10 flex flex-col min-h-screen">

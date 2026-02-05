@@ -1,15 +1,22 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "cac-url-backend",
+  "version": "2.0.0",
+  "description": "URL Shortener API with Neon.tech PostgreSQL",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node --watch server.js",
+    "build": "echo 'Build complete'",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:sync": "node -e \"require('./config/database').sync({ alter: true }).then(() => console.log('DB synced')).catch(console.error)\"",
+    "db:test": "node -e \"require('./config/database').testConnection().then(() => process.exit(0)).catch(() => process.exit(1))\""
   },
-  "keywords": [],
+  "keywords": ["url-shortener", "api", "neon", "postgresql"],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
