@@ -20,16 +20,15 @@ const Url = sequelize.define("Url", {
     customAlias: {
         type: DataTypes.STRING,
         unique: true,
-        sparse: true,
-        defaultValue: null,
+        allowNull: true,
     },
     userId: {
         type: DataTypes.INTEGER,
+        allowNull: true,
         references: {
             model: User,
             key: "id",
         },
-        defaultValue: null,
     },
     email: {
         type: DataTypes.STRING,
