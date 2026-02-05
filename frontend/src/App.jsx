@@ -7,10 +7,20 @@ import Sidebar from "./components/Sidebar";
 import DashboardPage from "./components/Dashboard/DashboardPage";
 import LinkDetailsPage from "./components/Dashboard/LinkDetailsPage";
 
+import RedirectHandler from "./components/RedirectHandler";
+
 function App() {
   const { user, logout, loading, signInWithGoogle } = useAuth();
   const [currentPage, setCurrentPage] = useState("home");
   const [selectedLink, setSelectedLink] = useState(null);
+
+  // Check for short URL redirection (e.g. /abc1234)
+  const path = window.location.pathname;
+  // Ignore Vercel internal paths or assets
+  if (path && path !== '/' && path !== '/index.html' && !path.startsWith('/assets') && !path.startsWith('/@')) {
+    const shortId = path.substring(1);
+    return <RedirectHandler shortId={shortId} />;
+  }
 
   // Force re-render when auth state changes
   useEffect(() => {

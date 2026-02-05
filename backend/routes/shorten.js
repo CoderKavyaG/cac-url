@@ -70,8 +70,15 @@ router.post('/', asyncHandler(async (req, res) => {
     seoImage: seoImage || null,
   });
 
-  // Build the short URL
-  const baseUrl = process.env.API_URL || 'http://localhost:3000';
+  // Build the short URL (Use Frontend URL for clean, short links)
+  let baseUrl = process.env.FRONTEND_URL || process.env.API_URL || 'http://localhost:3000';
+
+  // Ensure protocol and remove trailing slash
+  if (!baseUrl.startsWith('http')) {
+    baseUrl = `https://${baseUrl}`;
+  }
+  baseUrl = baseUrl.replace(/\/$/, '');
+
   const shortUrlPath = aliasToUse || shortId;
   const shortUrl = `${baseUrl}/${shortUrlPath}`;
 
