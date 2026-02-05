@@ -22,6 +22,18 @@ const Url = sequelize.define("Url", {
         unique: true,
         allowNull: true,
     },
+    seoTitle: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    seoDescription: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    seoImage: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
     userId: {
         type: DataTypes.INTEGER,
         allowNull: true,

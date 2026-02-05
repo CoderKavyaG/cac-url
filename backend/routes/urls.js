@@ -211,11 +211,15 @@ router.get('/:shortId/stats', authMiddleware, asyncHandler(async (req, res) => {
   }
 
   const clickHistory = url.clickHistory || [];
-  
+
+  // Aggregate click data
   // Aggregate click data
   const clicksByDay = {};
   const clicksByReferrer = {};
   const clicksByBrowser = {};
+  const clicksByOS = {};
+  const clicksByDevice = {};
+  const clicksByCountry = {};
 
   clickHistory.forEach(click => {
     // By day
@@ -226,14 +230,29 @@ router.get('/:shortId/stats', authMiddleware, asyncHandler(async (req, res) => {
     const referrer = click.referrer || 'Direct';
     clicksByReferrer[referrer] = (clicksByReferrer[referrer] || 0) + 1;
 
-    // Simple browser detection from user agent
-    const ua = (click.userAgent || '').toLowerCase();
-    let browser = 'Other';
-    if (ua.includes('chrome')) browser = 'Chrome';
-    else if (ua.includes('firefox')) browser = 'Firefox';
-    else if (ua.includes('safari')) browser = 'Safari';
-    else if (ua.includes('edge')) browser = 'Edge';
+    // By Browser (use parsed data if available, fallback to simple detection)
+    let browser = click.browser;
+    if (!browser || browser === 'Unknown') {
+      const ua = (click.userAgent || '').toLowerCase();
+      if (ua.includes('chrome')) browser = 'Chrome';
+      else if (ua.includes('firefox')) browser = 'Firefox';
+      else if (ua.includes('safari')) browser = 'Safari';
+      else if (ua.includes('edge')) browser = 'Edge';
+      else browser = 'Other';
+    }
     clicksByBrowser[browser] = (clicksByBrowser[browser] || 0) + 1;
+
+    // By OS
+    const os = click.os || 'Unknown';
+    clicksByOS[os] = (clicksByOS[os] || 0) + 1;
+
+    // By Device
+    const device = click.device || 'Desktop';
+    clicksByDevice[device] = (clicksByDevice[device] || 0) + 1;
+
+    // By Country
+    const country = click.country || 'Unknown';
+    clicksByCountry[country] = (clicksByCountry[country] || 0) + 1;
   });
 
   successResponse(res, {
@@ -246,6 +265,9 @@ router.get('/:shortId/stats', authMiddleware, asyncHandler(async (req, res) => {
       clicksByDay,
       clicksByReferrer,
       clicksByBrowser,
+      clicksByOS,
+      clicksByDevice,
+      clicksByCountry,
       recentClicks: clickHistory.slice(-10).reverse(),
     },
   }, 'URL stats retrieved successfully');

@@ -26,7 +26,7 @@ router.post('/', asyncHandler(async (req, res) => {
   // Extract userId from JWT if user is logged in
   let userId = null;
   const token = req.headers.authorization?.split(' ')[1];
-  
+
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -47,13 +47,15 @@ router.post('/', asyncHandler(async (req, res) => {
     if (existingAlias) {
       throw createError.conflict('Custom alias is already taken');
     }
-    
+
     aliasToUse = customAlias;
   }
 
   // Generate short ID and create URL
   const shortId = nanoid(6);
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+  const { seoTitle, seoDescription, seoImage } = req.body;
 
   const newUrl = await Url.create({
     originalUrl,
@@ -63,6 +65,9 @@ router.post('/', asyncHandler(async (req, res) => {
     expiresAt,
     clicks: 0,
     clickHistory: [],
+    seoTitle: seoTitle || null,
+    seoDescription: seoDescription || null,
+    seoImage: seoImage || null,
   });
 
   // Build the short URL

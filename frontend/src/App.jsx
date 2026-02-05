@@ -14,10 +14,11 @@ function App() {
 
   // Force re-render when auth state changes
   useEffect(() => {
-    if (user) {
-      // User logged in
+    if (!loading && !user && (currentPage === 'dashboard' || currentPage === 'linkDetails')) {
+      setCurrentPage('home');
+      signInWithGoogle(); // Prompt login
     }
-  }, [user]);
+  }, [user, loading, currentPage]);
 
   return (
     <div className="min-h-screen w-full bg-black text-white">
@@ -58,7 +59,7 @@ function App() {
             {/* Dashboard Page */}
             {currentPage === "dashboard" && (
               <div className="w-full">
-                <DashboardPage 
+                <DashboardPage
                   setCurrentPage={setCurrentPage}
                   onViewLink={(link) => {
                     setSelectedLink(link);
@@ -72,7 +73,7 @@ function App() {
             {/* Link Details Page */}
             {currentPage === "linkDetails" && selectedLink && (
               <div className="w-full">
-                <LinkDetailsPage 
+                <LinkDetailsPage
                   link={selectedLink}
                   onBack={() => setCurrentPage("dashboard")}
                 />
