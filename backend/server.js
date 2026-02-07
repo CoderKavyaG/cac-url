@@ -71,6 +71,25 @@ if (process.env.NODE_ENV !== 'production') {
 // ROUTES
 // ===========================================
 
+// Middleware to ensure DB is ready before handling requests (Critical for Vercel Cold Starts)
+app.use(async (req, res, next) => {
+  if (!isDbInitialized) {
+    try {
+      await dbInitPromise;
+      // Double check in case promise failed but we want to retry
+      if (!isDbInitialized) await initDB();
+    } catch (err) {
+      console.error('Database connection failed during request:', err);
+      return res.status(500).json({ error: 'Database connection failed', details: err.message });
+    }
+  }
+  next();
+});
+
+// ===========================================
+// ROUTES
+// ===========================================
+
 // Health check (no rate limit)
 app.use('/health', healthRoutes);
 
@@ -97,20 +116,7 @@ app.use('/api', notFoundHandler);
 // Global error handler
 app.use(errorHandler);
 
-// ===========================================
-// SCHEDULED TASKS
-// ===========================================
 
-/**
- * Clean up expired URLs every hour
- */
-// ===========================================
-// SCHEDULED TASKS
-// ===========================================
-
-/**
- * Clean up expired URLs every hour
- */
 async function cleanupExpiredUrls() {
   try {
     const now = new Date();
@@ -169,19 +175,7 @@ const dbInitPromise = initDB().catch(err => {
 });
 
 // Middleware to ensure DB is ready before handling requests (Critical for Vercel Cold Starts)
-app.use(async (req, res, next) => {
-  if (!isDbInitialized) {
-    try {
-      await dbInitPromise;
-      // Double check in case promise failed but we want to retry
-      if (!isDbInitialized) await initDB();
-    } catch (err) {
-      console.error('Database connection failed during request:', err);
-      return res.status(500).json({ error: 'Database connection failed', details: err.message });
-    }
-  }
-  next();
-});
+
 
 
 // ===========================================

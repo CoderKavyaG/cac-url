@@ -11,8 +11,15 @@ const RedirectHandler = ({ shortId }) => {
             try {
                 // Construct the backend redirect URL
                 // We ensure we don't have double slashes if shortId has one, though passing it clean is best.
+                // Construct the backend redirect URL
+                const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '');
+
+                if (!baseUrl) {
+                    throw new Error("API URL is not configured");
+                }
+
                 const cleanId = shortId.replace(/^\//, '');
-                const backendRedirectUrl = `${import.meta.env.VITE_API_URL}/${cleanId}`;
+                const backendRedirectUrl = `${baseUrl}/${cleanId}`;
 
                 // Redirect to backend
                 window.location.href = backendRedirectUrl;
